@@ -15,7 +15,7 @@ class FindPortals:
         self.window3.title("Find Portals")
         self.window3.wm_attributes("-topmost", 0)
         #self.first_strongholds = [(1512, -104), (5736, -712), (7512, 2280), (10584, 1368), (14168, 584), (17704, -312), (20920, 1160), (23528, -920)]
-        self.first_strongolds = []
+        self.first_strongholds = []
         self.prev = (0, 0)
         self.new_strongholds = []
 
@@ -31,7 +31,7 @@ class FindPortals:
         self.entries = [tk.Entry(self.window3, width=40, borderwidth=5, bg="#feedcc") for i in range(0,8)]
         [self.entries[i].grid(row=i, column=2, columnspan=3) for i in range(0,8)]
 
-        self.locks = [tk.Button(self.window3, text="lock", borderwidth=3, bg="#fecca8", command=lambda: [self.lock_entry(self.entries[i].get(), self.locks[i], i+1)]) for i in range(0,8)]
+        self.locks = [tk.Button(self.window3, text="lock", borderwidth=3, bg="#fecca8", command=lambda i=i: [self.lock_entry(self.entries[i].get(), self.locks[i], i+1)]) for i in range(0,8)]
         [self.locks[i].grid(row=i, column=5) for i in range(0,8)]
 
         self.sh_per_ring = [3, 6, 10, 15, 21, 28, 36, 10]
