@@ -7,11 +7,9 @@ from tkinter.simpledialog import askinteger
 from tkinter.simpledialog import askstring
 
 class FindPortals:
-    def __init__(self, root):
-    #def __init__(self):
+    def __init__(self):
         #create root window
-        #self.window3 = tk.Tk()
-        self.window3 = tk.Toplevel(root)
+        self.window3 = tk.Tk()
         self.window3.config(bg="#fee5b5")
         self.window3.title("Find Portals")
         self.window3.wm_attributes("-topmost", 0)
@@ -19,7 +17,7 @@ class FindPortals:
         self.first_strongholds = []
         self.prev = (0, 0)
         self.new_strongholds = []
-        self.completed_eighth_ring = []
+        self.completed_eighth_ring = 0
         self.found_empty = False #true when the user has found the 8th ring's empty sector
 
         self.sh_per_ring = [3, 6, 10, 15, 21, 28, 36, 10]
@@ -38,8 +36,8 @@ class FindPortals:
 
     def create_inital_widgets(self):
         #toggles window always on top or not
-        self.toggle_frame = tk.Frame(self.window3, width=150, height=10, bg="#fee5b5")
-        self.toggle_frame.grid(row=1, column=6)
+        self.toggle_frame = tk.Frame(self.window3, width=150, height=20, bg="#fee5b5")
+        self.toggle_frame.grid(row=1, column=6, rowspan=2)
         top_value = tk.BooleanVar()
         self.topmost_toggle = tk.Checkbutton(self.toggle_frame, bg="#fee5b5", activebackground="#fee5b5", text="Always On Top", variable=top_value, onvalue=True, offvalue=False, command=lambda: [self.check_top(top_value.get())])
         self.topmost_toggle.place(relx=0.5, rely=0.5, anchor="center")
@@ -144,7 +142,7 @@ class FindPortals:
             plt.savefig("output.png", bbox_inches="tight", transparent=True)
 
             #self.window3.geometry("400x200")
-            self.completed_eighth_ring.append(1)
+            self.completed_eighth_ring+=1
             self.setup_next()
             self.next_sh()
         else:
@@ -193,7 +191,7 @@ class FindPortals:
 
     #new options for when next stronghold is in 8th ring
     def create_empty_widgets(self):
-        if self.sh in self.eighth_ring and len(self.completed_eighth_ring)<=9 and self.found_empty==False:
+        if self.sh in self.eighth_ring and self.completed_eighth_ring<9 and self.found_empty==False:
             self.empty_frame = tk.Frame(self.window3, height=70, width=280, bg="#cdeaf7")
             self.empty_sector = tk.Label(self.empty_frame, text="8th ring, there could be no stronghold. \nIf there is no stronghold please press 'empty'.\nOtherwise, hit 'next'.", bg="#cdeaf7")
             self.empty_button = tk.Button(self.bt_frame, text="empty", command=self.empty, height=1, width=5, borderwidth=3, bg="#99d4e9", activebackground="#b3deef")
@@ -201,7 +199,7 @@ class FindPortals:
             self.empty_sector.place(relx=0.5, rely=0.5, anchor="center")
             self.empty_button.place(relx=0.66, rely=0.5, anchor="center")
         elif self.sh in self.eighth_ring and self.found_empty==False:
-            self.empty() #dont make user check empty sector when you already know its empty
+            self.empty() #dont make user check last 8th ring sh when you already know its empty
         else:
             return
 
@@ -209,11 +207,10 @@ class FindPortals:
     def next_sh(self):
         try:
             if self.empty_button.winfo_exists():
-                print(self.empty_button.winfo_exists())
                 self.empty_button.destroy()
                 self.empty_frame.destroy()
-                self.completed_eighth_ring.append(1) #if user did not press empty, add to the completed 8th ring list
-                print("you have found " + len(self.completed_eighth_ring) + " 8th ring strongholds") 
+                self.completed_eighth_ring += 1 #if user did not press empty, add to the completed 8th ring list
+                print(f"\nyou have found {self.completed_eighth_ring} 8th ring strongholds\n") 
         except:
             pass
 
@@ -254,6 +251,7 @@ class FindPortals:
 
     
     def empty(self):
+        #fix graph stuff
         self.c2 = True
         try:
             self.point.remove()
@@ -261,7 +259,8 @@ class FindPortals:
         except:
             print("photo broken")
             pass
-        self.count -= 1
+    
+        self.count -= 1 #this is a little scuffed but it works ok look
         updateCount(self.count)
         self.empty_button.destroy()
         self.empty_frame.destroy()
@@ -269,6 +268,7 @@ class FindPortals:
         self.found_empty = True
         self.next_sh()
 
+    #changes count manually according to user
     def override_count(self):
         try:
             self.empty_button.destroy()
@@ -282,6 +282,7 @@ class FindPortals:
         self.sh_label.config(text=f"Stronghold {str(self.count)}:\n{str(self.sh_n)} at angle {str(self.ang)}", font=('Cambria', 14))
         self.create_empty_widgets()
     
+    #redoes pathfinding from spawn when user forgets to set bed
     def find_from_spawn(self):
         msg = messagebox.askyesno(message="Have you filled in the portal at the stronghold currently listed?")
         if msg:
@@ -302,6 +303,7 @@ class FindPortals:
         self.pos = (0, 0)
         self.get_new_path()
     
+    #redoes pathfinding from specific coords if user gets lost or something idk
     def find_from_coords(self):
         msg = messagebox.askyesno(message="Have you filled in the portal at the stronghold currently listed?")
         if msg:
@@ -359,11 +361,9 @@ class FindPortals:
         self.sh_label.config(text=f"Stronghold {str(self.count)}:\n{str(self.sh_n)} at angle {str(self.ang)}", font=('Cambria', 14))
         self.create_empty_widgets()
 
-    #def start(self):
-        #self.window3.mainloop()
+    def start(self):
+        self.window3.mainloop()
 
 
-#app = FindPortals()
-#app.start()
-
-#change completed 8th ring to count not list lol
+app = FindPortals()
+app.start()
