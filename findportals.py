@@ -54,6 +54,10 @@ class FindPortals:
             self.locks[i].config(command=lambda i=i: self.lock_entry(self.entries[i].get(), self.locks[i], i+1))
         [self.locks[i].grid(row=i, column=5) for i in range(0,8)]
 
+        #label telling user to lock in order cause i dont wanna sort the list myself
+        lock_order_label = tk.Label(self.window3, text="Please make sure you\nlock strongholds in the\norder you found them", bg="#fee5b5")
+        lock_order_label.grid(row=3, column=6, rowspan=3)
+
         #goes to next stage, only works once all 8 locations have been locked
         self.next_button = tk.Button(self.window3, text="next", command=self.check_next, bg="#fecca8", activebackground="#feedcc")
         self.next_button.grid(row=9, column=6)
@@ -67,9 +71,13 @@ class FindPortals:
 
     #checks if coords are in correct ring and in the right format, adds them to first strongholds list
     def lock_entry(self, entry, lock, i):
-        self.sh = tuple(getIntInput(entry))
+        try:
+            self.sh = tuple(getIntInput(entry))
+        except:
+            messagebox.showerror(message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command")
+            return
         if len(self.sh) != 2:
-            messagebox.showerror(message="Something went wrong. Make sure you only input your x and z\ncoordinate separated by a space, or copy paste the f3+c command")
+            messagebox.showerror(message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command")
             return
         else:
             ring = getRing(self.sh)
@@ -181,6 +189,8 @@ class FindPortals:
         self.forgot_spawn.place(relx=0.5, rely=0.5, anchor="center")
         self.got_lost.place(relx=0.5, rely=0.8, anchor="center")
 
+        self.window3.geometry("480x190")
+
     def update_image(self):
         self.line, self.point = graphAddSH(self.prev, self.sh, "blue", self.c2)
         if not self.noGraph:
@@ -200,6 +210,8 @@ class FindPortals:
             self.empty_button.place(relx=0.66, rely=0.5, anchor="center")
         elif self.sh in self.eighth_ring and self.found_empty==False:
             self.empty() #dont make user check last 8th ring sh when you already know its empty
+        elif self.sh in self.eighth_ring and self.found_empty==True:
+            print("eighth ring stronghold\n")
         else:
             return
 
@@ -210,7 +222,7 @@ class FindPortals:
                 self.empty_button.destroy()
                 self.empty_frame.destroy()
                 self.completed_eighth_ring += 1 #if user did not press empty, add to the completed 8th ring list
-                print(f"\nyou have found {self.completed_eighth_ring} 8th ring strongholds\n") 
+                print(f"you have found {self.completed_eighth_ring} 8th ring strongholds\n") 
         except:
             pass
 
@@ -224,7 +236,7 @@ class FindPortals:
             self.sh_n = (round(self.sh[0] / 8), round(self.sh[1] / 8))
 
             #comment out if you want it to run faster
-            #self.update_image()
+            self.update_image()
 
             self.noGraph = False
             self.c2 = False
@@ -251,6 +263,7 @@ class FindPortals:
 
     
     def empty(self):
+        print("empty sector\n")
         #fix graph stuff
         self.c2 = True
         try:
@@ -264,7 +277,6 @@ class FindPortals:
         updateCount(self.count)
         self.empty_button.destroy()
         self.empty_frame.destroy()
-        print("destroyed buttons and frame")
         self.found_empty = True
         self.next_sh()
 
@@ -322,7 +334,12 @@ class FindPortals:
             self.count += 1
 
         new_coords = askstring('', 'Type out your x and z coordinates you want to start pathfinding from (OW):')
-        new_pos = tuple(getIntInput(new_coords))
+        try:
+            new_pos = tuple(getIntInput(new_coords))
+        except:
+            messagebox.showerror(message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command")
+            return
+
         if not new_pos:
             return
         else:
