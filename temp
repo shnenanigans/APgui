@@ -1,0 +1,158 @@
+import tkinter as tk
+from tkinter import messagebox
+from utils import *
+import numpy as np
+import matplotlib.pyplot as plt
+from tkinter.simpledialog import askinteger
+from tkinter.simpledialog import askstring
+import json
+import sys
+
+class Main:
+    def __init__(self):
+        #self.first_strongholds = [(1512, -104), (5736, -712), (7512, 2280), (10584, 1368), (14168, 584), (17704, -312), (20920, 1160), (23528, -920)]
+        #[[1512, -104], [5736, -712], [7512, 2280], [10584, 1368], [14168, 584], [17704, -312], [20920, 1160], [23528, -920]]
+        self.sh_per_ring = [3, 6, 10, 15, 21, 28, 36, 10]
+        self.magnitude_per_ring = [2048, 5120, 8192, 11264, 14336, 17408, 20480, 23552]
+        self.settings = {} #create dict for savestate
+        self.prev = (0, 0) #might need this for repathfinding, not for regular portals tho
+        self.completed_eighth_ring = 0
+        self.found_empty = False #true when the user has found the 8th ring's empty sector
+        self.count = 0
+        self.first_strongholds = [] #list
+        #maybe nograph and c2 and stuff
+        updateCount(self.count)
+
+    #changes window always on top or not
+    @staticmethod
+    def check_top(window, top_value):
+        print("make sure this works")
+        if top_value:
+            window.wm_attributes("-topmost", 1)
+        else:
+            window.wm_attributes("-topmost", 0)
+
+class FirstEight(Main):
+    def __init__(self):
+        super().__init__()
+        self.window1 = tk.Tk()
+        self.window1.config(bg="#fee5b5")
+        self.window1.title("Find Portals")
+        self.window1.wm_attributes("-topmost", 0)
+        self.create_entries()
+        self.create_toggle()
+        self.create_next()
+
+        #create the image showing portals path and completed portals
+        self.img = plt.imread("rings.png")
+        plt.imshow(self.img, aspect="equal", extent=[-24320, 24320, -24320, 24320])
+        plt.axis("off")
+        plt.savefig("output.png", bbox_inches="tight", transparent=True)
+
+        #exit handler (thanks desktop)
+        self.window1.protocol("WM_DELETE_WINDOW", lambda: [sys.exit(0)])
+
+    def create_toggle(self): #could make its own class? idk
+        #toggles window always on top or not
+        toggle_frame = tk.Frame(self.window1, width=150, height=10, bg="#fee5b5")
+        toggle_frame.grid(row=1, column=6)
+        top_value = tk.BooleanVar()
+        topmost_toggle = tk.Checkbutton(toggle_frame, bg="#fee5b5", activebackground="#fee5b5", text="Always On Top", variable=top_value, onvalue=True, offvalue=False, command=lambda: [self.check_top(top_value.get())])
+        topmost_toggle.place(relx=0.5, rely=0.5, anchor="center")
+
+    def create_entries(self):
+        self.entries = [Entry(self.window1, i) for i in range(1,9)]
+
+    def create_next(self):
+        self.next_button = tk.Button(self.window1, text="next", command=self.create_window2, bg="#fecca8", activebackground="#feedcc")
+        self.next_button.grid(row=9, column=6)
+    
+    def create_window2(self):
+        first_strongholds = self.entries.get()
+        if len(self.first_strongholds)==8:
+            self.window1.destroy()
+            self.window2 = tk.Tk()
+            self.window2.geometry("480x190")
+            #start new class
+        else:
+            messagebox.showerror(title=None, message="Please lock all stronghold locations")
+    
+    def start(self):
+        self.window1.mainloop()
+
+class Entry(Main):
+    def __init__(self, win, i): #'i' starts at 1 and goes to 8
+        self.shlabel = tk.Label(win, bg="#fee5b5", text=f"sh {i}:")
+        self.entry = tk.Entry(win, width=40, border=5, bg="#feedcc")
+        self.locks = tk.Button(win, text="lock", border=3, bg="#fecca8", activebackground="#feedcc", command=self.lock)
+        self.shlabel.grid(row=i, column=1)
+        self.entry.grid(row=i, column=2, columnspan=3)
+        self.locks.grid(row=i, column=5)
+        self.i = i
+        self.win = win
+        
+    def save(self):
+        templist = []
+        for item in self.first_strongholds:
+            item = [item.get_count(), item.get_coords()] 
+            templist.append(item)
+        with open('savestate.json', 'w') as j:
+            json.dump(templist, j)
+
+    def lock(self): #scuffed! (cause lock is also in utils this will not confuse me nope)
+        coords = lock(self.entry.get(), self.i)
+        if coords is not None:
+            self.entry.destroy()
+            cover = tk.Label(self.win, text=coords, width=40, bg="#fee5b5")
+            cover.grid(row=self.i, column=2, columnspan=3)
+            self.locks.config(state="disabled")
+            sh = Stronghold(self.i, coords) #using 'i' here matches sh to ring, but appear in the list in the order of which the user filled first
+            self.first_strongholds.append(sh) #appends whole stronghold object
+            self.updateImg(sh.get_coords())
+            self.save()
+            return
+        else: #error messages come up in the utils lock function
+            return
+
+    def updateImg(self, sh): #sh is the coords only, not sh object
+        if len(self.first_strongholds)>1: #prev will be 0,0 for the first stronghold
+            prev = self.first_strongholds[-1]
+        else:
+            prev = (0, 0)
+        plt.scatter(sh[0], sh[1], c="green", s=40)
+        plt.arrow(
+            prev[0],
+            prev[1],
+            sh[0] - prev[0],
+            sh[1] - prev[1],
+            color="green",
+            width=0.0001,
+            head_width=0,
+            head_length=0,
+            length_includes_head=True,
+        )
+        plt.savefig("output.png", bbox_inches="tight", transparent=True)
+    
+
+class Stronghold:
+    def __init__(self, count, coords):
+        self.sh_number = count
+        self.sh_coords = coords
+        self.checkEighthRing()
+
+    def get_count(self):
+        return self.sh_number
+    def get_coords(self):
+        return self.sh_coords
+    
+    def checkEighthRing(self):
+        ring = getRing(self.sh_coords)
+        if ring == 8:
+            self.isEighthRing = True
+        else:
+            self.isEighthRing = False
+    
+
+
+app = FirstEight()
+app.start()
