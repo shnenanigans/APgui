@@ -153,3 +153,12 @@ def find_angle(pos, nexsh):
         actual_angle = ref_angle
     actual_angle = round(actual_angle, 2)
     return actual_angle
+
+
+#thanks chatgpt
+def distance_from_origin(coord):
+    x, y = coord
+    return math.sqrt(x**2 + y**2)
+
+def order_shs(coordinates): #orders the first 8 strongholds so that things dont break (sorry meebie and kruin)
+    return sorted(coordinates, key=distance_from_origin)
