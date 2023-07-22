@@ -116,6 +116,7 @@ class FindPortals:
     #checks each sh location is locked before changing window setup and predicts other sh locations
     def check_next(self):
         if len(self.first_strongholds) == 8:
+            self.first_strongholds = order_shs(self.first_strongholds)
             # Predict location of all the other strongholds
             for i in range(len(self.first_strongholds)):
                 x, z = self.first_strongholds[i]
