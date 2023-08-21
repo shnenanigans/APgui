@@ -16,17 +16,25 @@ sh_bounds = [
     (22784, 24320),
 ]
 
+#colours for first 8 strongholds window
 peach = "#fee5b5"
 lightpeach = "#feedcc"
 darkpeach = "#fecca8"
+
+#colours for normal background
 lightblue = "#cdeaf7"
 buttonblue = "#99d4e9"
 pressblue = "#b3deef"
-edithotkey = "#a5d145"
+
+#colours for when player should not leave spawn
 spawngreen = "#66b266"
 buttongreen = "#329932"
-pressgreen = "#7fbf7f"
+pressgreen = "#63AB63"
 
+#colours for when players should leave spawn behind
+spawnpurple = "#CDADF4"
+buttonpurple = "#B28CE2"
+presspurple = "#C69FF6"
 
 # silly reponse list
 silly_list = [
