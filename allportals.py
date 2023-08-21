@@ -11,6 +11,7 @@ from tkinter import messagebox
 from constants import *
 from utils import *
 from strongholds import Strongholds
+import random
 
 """
 THINGS TO SET BACK TO NORMAL AFTER TESTING
@@ -20,10 +21,11 @@ first 8 strongholds list
 
 THINGS TO FIX
 make pathfind from coords work
-tell user when to set spawn on the gui somewhere
 subprocess.run for running concord and adding concord to exe (dank)
-hotkey button thing doesnt work sort of 
 fix silly list (very important)
+comment code :D
+fix empty sector turning purple
+label too small for coords
 """
 
 class AllPortals:
@@ -31,7 +33,8 @@ class AllPortals:
         self.strongholds = Strongholds()
 
         self.next_stronghold_hotkey = ""
-        self.listener = keyboard.Listener(on_press=self.on_press)
+        self.purple = False
+        self.done = False
 
     def start(self):
         """actually start the window and program"""
@@ -253,7 +256,7 @@ class AllPortals:
         self.root.config(bg=lightblue)
         self.toggle_frame.config(height=70, width=200, bg=lightblue)
         self.topmost_toggle.config(bg=lightblue, activebackground=pressblue)
-        self.sh_frame = tk.Frame(self.root, height=70, width=300, bg=lightblue)
+        self.sh_frame = tk.Frame(self.root, height=70, width=310, bg=lightblue)
         self.sh_label = tk.Label(self.sh_frame, text="", bg=lightblue)
         self.sh_label.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -302,8 +305,10 @@ class AllPortals:
         self.got_lost.place(relx=0.5, rely=0.66, anchor="center")
 
         image=tk.Toplevel()
+        image.title("Portals Graph")
+        image.config(bg=lightblue)
         image.geometry("400x400")
-
+        
         #make sure user can't accidentally close the image window cause there's no way to get it back
         def on_closing(): messagebox.showinfo("no", "You must close the main program to close this window.")
         image.protocol("WM_DELETE_WINDOW", on_closing)
@@ -417,9 +422,11 @@ class AllPortals:
         self.empty_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.empty_sector = tk.Label(
             self.empty_frame,
-            text="8th ring, there could be no stronghold. \nIf there is no stronghold please press 'empty'.\nOtherwise, hit 'next'.",
+            text="8th ring, there could be\nno stronghold",
             bg=lightblue,
         )
+        self.empty_frame.place(x=0, y=110)
+
         self.empty_button = tk.Button(
             self.bt_frame,
             text="empty",
@@ -430,56 +437,81 @@ class AllPortals:
             bg=buttonblue,
             activebackground=pressblue,
         )
-        self.empty_frame.place(x=0, y=110)
         self.empty_sector.place(relx=0.5, rely=0.5, anchor="center")
         self.empty_button.place(relx=0.66, rely=0.5, anchor="center")
-        self.newnext_button.place(relx=0.33, rely=0.5, anchor="center")
+
+    def show_spawn(self):
+        #i know this code could be way more optimized leave me alone
+        try:
+            self.spawn_label.destroy()
+            self.spawn_frame.destroy()
+        except:
+            pass
+        if self.strongholds.get_leave_spawn():
+            self.spawn_frame = tk.Frame(self.root, height=70, width=280, bg=spawnpurple)
+            self.spawn_label = tk.Label(
+                self.spawn_frame,
+                text="LEAVE YOUR SPAWN AT THE NEXT STRONGHOLD.\nDO NOT BREAK BED AFTER FILLING PORTAL.",
+                bg=spawnpurple,
+            )
+            self.spawn_frame.place(x=0, y=110)
+            self.spawn_label.place(relx=0.5, rely=0.5, anchor="center")
+        elif self.strongholds.get_dont_set_spawn_colours() or self.purple:
+            self.spawn_frame = tk.Frame(self.root, height=70, width=280, bg=spawngreen)
+            self.spawn_label = tk.Label(
+                self.spawn_frame,
+                text="DO NOT SET YOUR SPAWN\nAT THE NEXT STRONGHOLD",
+                bg=spawngreen,
+            )
+            self.spawn_frame.place(x=0, y=110)
+            self.spawn_label.place(relx=0.5, rely=0.5, anchor="center")
+            self.purple = False
+
 
     def set_bg_colours(self):
-        if self.strongholds.get_leave_spawn() or self.strongholds.get_dont_set_spawn():
+        if self.strongholds.get_leave_spawn():
             try:
-                self.root.config(bg=spawngreen)
-
-                self.bt_frame.config(bg=spawngreen)
-                self.toggle_frame.config(bg=spawngreen)
-                self.sh_frame.config(bg=spawngreen)
-                self.new_buttons_frame.config(bg=spawngreen)
-
-                self.topmost_toggle.config(bg=spawngreen, activebackground=pressgreen)
-                self.newnext_button.config(bg=buttongreen, activebackground=pressgreen)
-                self.set_hotkey_button.config(bg=buttongreen, activebackground=pressgreen)
-                self.got_lost.config(bg=buttongreen, activebackground=pressgreen)
-                self.sh_label.config(bg=spawngreen)
-                #these two have to be last
-                self.empty_frame.config(bg=spawngreen)
-                self.empty_button.config(bg=buttongreen, activebackground=pressgreen)
-
+                self.empty_frame.destroy()
+                self.empty_sector.destroy()
             except:
                 pass
+            frame = spawnpurple
+            press = presspurple
+            button = buttonpurple
+            self.purple = True
+        elif self.strongholds.get_dont_set_spawn_colours() or self.purple:
+            try:
+                self.empty_frame.destroy()
+                self.empty_sector.destroy()
+            except:
+                pass
+            frame = spawngreen
+            press = pressgreen
+            button = buttongreen
         else:
-            try:
-                self.root.config(bg=lightblue)
-
-                self.bt_frame.config(bg=lightblue)
-                self.toggle_frame.config(bg=lightblue)
-                self.sh_frame.config(bg=lightblue)
-                self.new_buttons_frame.config(bg=lightblue)
-
-                self.topmost_toggle.config(bg=lightblue, activebackground=pressblue)
-                self.newnext_button.config(bg=buttonblue, activebackground=pressblue)
-                self.set_hotkey_button.config(bg=buttonblue, activebackground=pressblue)
-                self.got_lost.config(bg=buttonblue, activebackground=pressblue)
-                self.sh_label.config(bg=lightblue)
-                #these two have to be last
-                self.empty_frame.config(bg=lightblue)
-                self.empty_button.config(bg=buttonblue, activebackground=pressblue)
-            except:
-                pass
+            frame = lightblue
+            press = pressblue
+            button = buttonblue
+        
+        try: #bg=colour
+            self.root.config(bg=frame)
+            self.bt_frame.config(bg=frame)
+            self.toggle_frame.config(bg=frame)
+            self.sh_frame.config(bg=frame)
+            self.new_buttons_frame.config(bg=frame)
+            self.topmost_toggle.config(bg=frame, activebackground=press)
+            self.newnext_button.config(bg=button, activebackground=press)
+            self.set_hotkey_button.config(bg=button, activebackground=press)
+            self.got_lost.config(bg=button, activebackground=press)
+            self.sh_label.config(bg=frame)
+            #these two have to be last
+            self.empty_button.config(bg=button, activebackground=press)
+            self.empty_frame.config(bg=frame)
+        except:
+            pass
 
 
     def display_next_sh(self):
-        print(f"GET LEAVE SPAWN? {self.strongholds.get_leave_spawn()}")
-        self.set_bg_colours()
         sh_data = self.strongholds.get_next_sh()
         print(
             "Stronghold {0}:\n{1}, {2} blocks at angle {3}".format(
@@ -505,7 +537,19 @@ class AllPortals:
         except:
             pass
 
-        if self.strongholds.get_finished():
+        if self.done:
+            try:
+                self.sh_label.config(text=silly_list[self.silly_count])
+                self.silly_count += 1
+            except IndexError:
+                self.new_buttons_frame.destroy()
+                self.bt_frame.config(height=110)
+                self.bt_frame.lift()
+                self.toggle_frame.destroy()
+                self.newnext_button.config(command=self.movebutton)
+                pass
+
+        elif self.strongholds.get_finished():
             try:
                 if (
                     self.strongholds.estimations.index(
@@ -537,15 +581,21 @@ class AllPortals:
             except IndexError:
                 pass
             print("done!")
+            self.done = True
+            self.silly_count = 0
+
         else:
             self.complete_sh(self.strongholds.get_next_sh_coords(), last_empty)
-            self.optimize_next_3_nodes()
             self.create_empty_widgets()
+            try:
+                self.optimize_next_3_nodes()
+            except IndexError:
+                pass #fixes errors in colour settings and somehow those errors mess with the graph so i gotta put this here
             self.update_image(last_empty)
             try:
                 print("leave your spawn behind?", self.strongholds.get_leave_spawn())
                 print(
-                    "dont set your spawn at all?", self.strongholds.get_dont_set_spawn()
+                    "don't set your spawn at all?", self.strongholds.get_dont_set_spawn()
                 )
             except IndexError:
                 pass
@@ -553,6 +603,8 @@ class AllPortals:
 
     def optimize_next_3_nodes(self):
         self.strongholds.set_current_location(self.strongholds.get_last_sh_coords())
+        self.set_bg_colours()
+        self.show_spawn()
         if self.strongholds.get_last_path() == 2:
             self.strongholds.set_current_location(
                 self.strongholds.get_last_sh_coords(-2)
@@ -564,8 +616,11 @@ class AllPortals:
 
     def empty(self):
         print("empty sector\n")
-        self.empty_button.destroy()
-        self.empty_frame.destroy()
+        try:
+            self.empty_button.destroy()
+            self.empty_frame.destroy()
+        except:
+            pass
 
         self.next_sh(True)
         # plot empty sh point
@@ -583,8 +638,11 @@ class AllPortals:
 
     def skip_empty(self):
         print("empty sector\n")
-        self.empty_button.destroy()
-        self.empty_frame.destroy()
+        try:
+            self.empty_button.destroy()
+            self.empty_frame.destroy()
+        except:
+            pass
 
         # plot empty sh point
         try:
@@ -651,17 +709,35 @@ class AllPortals:
 
     def set_next_hotkey(self):
         """sets hotkey to go to the next stronghold when you press the set hotkey button"""
-        self.listener.stop()
+        colour = buttonblue
+        if self.strongholds.get_leave_spawn():
+            colour = buttonpurple
+        elif self.strongholds.get_dont_set_spawn_colours():
+            colour = buttongreen
+        try:
+            self.listener.stop()
+        except:
+            pass
+        self.listener = keyboard.Listener(on_press=self.on_press)
         self.next_stronghold_hotkey = simpledialog.askstring("Input", "Enter a hotkey:")
         if self.next_stronghold_hotkey == "":
-            self.set_hotkey_button.config(text="Set Hotkey", bg=buttonblue)
+            self.set_hotkey_button.config(text="Next SH Hotkey", bg=colour)
+        elif self.next_stronghold_hotkey == "k" or self.next_stronghold_hotkey == "l" or self.next_stronghold_hotkey == "q":
+            tk.messagebox.showerror("no", "You cannont make this your hotkey.")
+            self.set_hotkey_button.config(text="Next SH Hotkey", bg=colour)
+            self.next_stronghold_hotkey = ""
         else:
             print("set hotkey to " + self.next_stronghold_hotkey)
-            self.set_hotkey_button.config(text=f"Edit Hotkey: {self.next_stronghold_hotkey}", bg=buttonblue)
-            #self.listener = keyboard.Listener(on_press=self.on_press) i put this line at the start of the program
+            self.set_hotkey_button.config(text=f"Next SH Hotkey: {self.next_stronghold_hotkey}", bg=colour)
             self.listener.start()
 
     def on_press(self, key):
         if get_key_string(key) == self.next_stronghold_hotkey:
             self.newnext_button.invoke()
             return
+
+    def movebutton(self):
+        x=random.uniform(0.1,0.9)
+        y=random.uniform(0.1,0.9)
+        self.newnext_button.place(relx=x, rely=y)
+        self.newnext_button.lift()
