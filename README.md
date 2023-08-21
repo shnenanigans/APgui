@@ -53,9 +53,11 @@ Purple = leave spawn at last strongold
 
 Green = Do not set spawn at all
 
-![image](https://github.com/shnenanigans/APgui/assets/83895136/c933bc6e-6fa1-466e-bee6-63122fbb306d)
+Here is an example of what the program would look like when getting to an 8th ring stronghold:
 
-As you can see, all important information can still be found in a resized window if you remember the colour codes.
+![image](https://github.com/shnenanigans/APgui/assets/83895136/d2be9011-d2ba-432f-838b-7f847e265c0c)
+
+As you can see, all important information can still be found in a resized window if you remember the colour codes and that the 8th ring has an 'empty' button.
 
 **How does it work?**
 
@@ -73,6 +75,16 @@ Here, the program is telling the player to leave spawn at 2, go to 3, teleport t
 
 Here is what it will look like if you don't set spawn at all. You don't set spawn at 2, teleport back to 0, 0 when you go through the end fountain, and travel to 3 from there because the distance from 3 to spawn is shorter than 3 to 2. The blue line simply indicates the next stronghold to go to.
 
+**How do I read the graph?**
 
+green = normal path
+
+blue = next stronghold
+
+purple = leave spawn behind
+
+yellow = do not set spawn
+
+star = done!
 
 
