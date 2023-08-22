@@ -18,14 +18,15 @@ THINGS TO SET BACK TO NORMAL AFTER TESTING
 next button disabled
 qs file reading
 first 8 strongholds list
+delete print statements
 
 THINGS TO FIX
 make pathfind from coords work
 subprocess.run for running concord and adding concord to exe (dank)
-fix silly list (very important)
 comment code :D
 fix empty sector turning purple
-label too small for coords
+fix readme
+hotkey button turns blue if you edit it while gui is green
 """
 
 class AllPortals:
@@ -33,8 +34,8 @@ class AllPortals:
         self.strongholds = Strongholds()
 
         self.next_stronghold_hotkey = ""
-        self.purple = False
-        self.done = False
+        self.purple = False #true if the last stronghold is where your spawn should be
+        self.done = False #true if you are done filling portals
 
     def start(self):
         """actually start the window and program"""
@@ -50,8 +51,8 @@ class AllPortals:
         self.root = tk.Tk()
         self.root.config(bg=peach)
         self.root.title("Find Portals")
-        self.root.wm_attributes("-topmost", 0)
-        self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), sys.exit(0)])
+        self.root.wm_attributes("-topmost", 0) #changes to 1 when the 'always on top' box is checked
+        self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), sys.exit(0)]) #for some reason the program doesnt stop when you close tkinter unless u have this thing
 
     def create_image(self):
         """create the image showing portals path and completed portals"""
@@ -60,6 +61,7 @@ class AllPortals:
         plt.axis("off")
 
     def update_count(self):
+        """tell the program and user how many portals are filled"""
         if (
             self.strongholds.get_completed_count() > 0
             and self.strongholds.get_completed_count()
@@ -81,13 +83,14 @@ class AllPortals:
                 facts_file.writelines(["(prime)\n"])
 
     def complete_sh(self, sh, empty=False):
+        """add stronghold to completed shs array and update count"""
         self.strongholds.complete_sh(sh, empty)
         self.update_count()
 
-    # checks if coords are in correct ring and in the right format, adds them to first strongholds list
     def lock_entry(
         self, ring: int, entry: object, button: object, next_button: object
     ) -> None:
+        """when user presses lock, check if coords are in correct ring and in the right format, add them to first strongholds array"""
         try:
             sh = tuple(parse_input(entry.get()))
             if len(sh) != 2:
@@ -119,18 +122,15 @@ class AllPortals:
         plt.draw()
         # plt.savefig("output.png", bbox_inches="tight", transparent=True)
 
-        entry.config(state="disabled", cursor="heart")
+        entry.config(state="disabled", cursor="heart") # <3
         button.config(state="disabled", cursor="heart")
 
 
         if self.strongholds.get_completed_count() == 8:
-            next_button.config(state="normal")
+            next_button.config(state="normal") # allow user to press next
 
     def check_next(self, next_button):
         """checks each sh location is locked before changing window setup and predicts other sh locations"""
-        if self.strongholds.get_completed_count() < 8:
-            tk.messagebox.showinfo(message="Please lock each stronghold location")
-            return
 
         next_button.config(
             state="disabled"
@@ -166,16 +166,17 @@ class AllPortals:
             *zip(*self.strongholds.estimations),
             c="gray",
             s=20,
-        )
+        ) # puts fun little dots on the graph
         plt.draw()
 
-        # self.root.geometry("400x200")
+        self.setspawn_button.destroy()
         self.setup_next()
         next_button.destroy()
         self.display_next_sh()
         self.update_image()
 
     def create_inital_widgets(self):
+        """create the window for entering your first 8 sh locations"""
         # toggles window always on top or not
         self.toggle_frame = tk.Frame(self.root, width=150, height=20, bg=peach)
         self.toggle_frame.grid(row=1, column=6, rowspan=2)
@@ -220,6 +221,14 @@ class AllPortals:
             activebackground=lightpeach,
         )
 
+        self.setspawn_button = tk.Button(
+            self.root,
+            text="Give Spawnpoint",
+            command=self.set_spawn,
+            bg=darkpeach,
+            activebackground=lightpeach,
+        )
+
         self.locks = [
             tk.Button(
                 self.root,
@@ -246,20 +255,23 @@ class AllPortals:
         )
         lock_order_label.grid(row=3, column=6, rowspan=3)
 
+        self.setspawn_button.grid(row=7, column=6)
         next_button.grid(row=9, column=6)
 
-    # changes entire window setup to just display sh coords and some options
     def setup_next(self):
+        """changes entire window setup to just display sh coords and some options"""
         self.c2 = False
-        self.noGraph = False
+        self.noGraph = False # i still have no idea what either of these do
 
+        # puts some nice lil frames in the gui and then the buttons go in the frames and its 10000x easier to have everything where you want it to go
         self.root.config(bg=lightblue)
         self.toggle_frame.config(height=70, width=200, bg=lightblue)
         self.topmost_toggle.config(bg=lightblue, activebackground=pressblue)
-        self.sh_frame = tk.Frame(self.root, height=70, width=310, bg=lightblue)
+        self.sh_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.sh_label = tk.Label(self.sh_frame, text="", bg=lightblue)
         self.sh_label.place(relx=0.5, rely=0.5, anchor="center")
 
+        # bt means buttons as in 'next' and 'empty' buttons not buried treasure sorry
         self.bt_frame = tk.Frame(self.root, height=40, width=280, bg=lightblue)
         self.newnext_button = tk.Button(
             self.bt_frame,
@@ -272,6 +284,7 @@ class AllPortals:
             activebackground=pressblue,
         )
 
+        # frame for the hotkey and repathfind buttons
         self.new_buttons_frame = tk.Frame(
             self.root, height=120, width=200, bg=lightblue
         )
@@ -291,7 +304,7 @@ class AllPortals:
         self.bt_frame.place(x=0, y=70)
         self.toggle_frame.place(x=280, y=0)
 
-
+        # button for repathfinding probably shouldve found a better name than 'got lost' oh well
         self.got_lost = tk.Button(
             self.new_buttons_frame,
             text="Pathfind from coords",
@@ -300,16 +313,34 @@ class AllPortals:
             bg=buttonblue,
             activebackground=pressblue,
         )
-        self.new_buttons_frame.place(x=280, y=70)
-        self.set_hotkey_button.place(relx=0.5, rely=0.33)
-        self.got_lost.place(relx=0.5, rely=0.66, anchor="center")
 
+        #give program your spawnpoint for more accurate optimizations
+        self.setspawn_button = tk.Button(
+            self.new_buttons_frame,
+            text="Give Spawnpoint",
+            command=self.set_spawn,
+            borderwidth=3,
+            bg=buttonblue,
+            activebackground=pressblue
+        )
+
+        if self.strongholds.spawn != (0, 0):
+            self.setspawn_button.config(text=f"Spawnpoint: {self.strongholds.spawn}")
+
+        self.new_buttons_frame.place(x=280, y=70)
+        self.set_hotkey_button.place(relx=0.5, rely=0.25, anchor="center")
+        self.setspawn_button.place(relx=0.5, rely=0.5, anchor="center")
+        self.got_lost.place(relx=0.5, rely=0.75, anchor="center")
+
+
+        # make a new tkinter window for the graph, has to be toplevel not a whole new tkinter thingy cause it cant multithread or something
         image=tk.Toplevel()
         image.title("Portals Graph")
         image.config(bg=lightblue)
         image.geometry("400x400")
         
         #make sure user can't accidentally close the image window cause there's no way to get it back
+        #pressing q will close the window though for some reason i give up trying to fix
         def on_closing(): messagebox.showinfo("no", "You must close the main program to close this window.")
         image.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -320,9 +351,15 @@ class AllPortals:
         thang.draw()
         thang.get_tk_widget().place(relx=0.5, rely=0.5, anchor="center")
 
+        #this is meant to be edited by the user to just show coords and next/empty button, which is why all the widgets are placed and not flexible or dependent on window size
         self.root.geometry("480x190")
 
+    def set_spawn(self):
+        spawn = self.strongholds.set_spawn()
+        self.setspawn_button.config(text=f"Spawnpoint: {spawn}")
+
     def update_image(self, empty: bool = False):
+        """add stronghold to graph with the right colours"""
         # graph path from last stronghold as green
         color = "green"
         try:
@@ -341,12 +378,12 @@ class AllPortals:
         except IndexError:
             pass
 
-        if self.strongholds.get_current_location() == (0, 0):
+        if self.strongholds.get_current_location() == self.strongholds.spawn:
             color = "yellow"
 
         self.graph_point(self.strongholds.get_last_sh_coords(), color)
 
-        if self.strongholds.get_current_location() == (0, 0):
+        if self.strongholds.get_current_location() == self.strongholds.spawn:
             self.graph_line(
                 self.strongholds.get_last_sh_coords(-2),
                 self.strongholds.get_last_location(),
@@ -399,10 +436,14 @@ class AllPortals:
         )
         plt.draw()
 
-    # new options for when next stronghold is in 8th ring
     def create_empty_widgets(self):
+        """new options for when next stronghold is in 8th ring"""
+
+        #dont show options if its not an 8th ring sh cause for some reason this function is called on every stronghold wow i coded this badly
         if get_stronghold_ring(self.strongholds.get_next_sh_coords()) != 8:
             return
+        
+        self.strongholds.add_completed_8th_ring()
 
         print(self.strongholds.get_completed_in_ring(8))
 
@@ -414,11 +455,15 @@ class AllPortals:
             self.skip_empty()  # dont make user check last 8th ring sh when you already know its empty
             return
 
+        #means empty sector has already been found and returns before showing the empty sh options
         if self.strongholds.get_empty_sh_index() != 0:
             print("eighth ring stronghold\n")
             return
 
         print("prompting empty check")
+        #this will usually not show up now cause of the dont set spawn thing which i think is more important than explaining that there could be no stronghold
+        #well technically it does show up its just replaced immediately
+        #wonder why the gui lags huh thats crazy
         self.empty_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.empty_sector = tk.Label(
             self.empty_frame,
@@ -427,6 +472,7 @@ class AllPortals:
         )
         self.empty_frame.place(x=0, y=110)
 
+        #this will always show up (unless user has already found the empty one)
         self.empty_button = tk.Button(
             self.bt_frame,
             text="empty",
@@ -441,10 +487,11 @@ class AllPortals:
         self.empty_button.place(relx=0.66, rely=0.5, anchor="center")
 
     def show_spawn(self):
+        """edits gui to tell user when to set spawn/not set spawn"""
         #i know this code could be way more optimized leave me alone
         try:
             self.spawn_label.destroy()
-            self.spawn_frame.destroy()
+            self.spawn_frame.destroy() # sometimes these dont exist
         except:
             pass
         if self.strongholds.get_leave_spawn():
@@ -456,7 +503,7 @@ class AllPortals:
             )
             self.spawn_frame.place(x=0, y=110)
             self.spawn_label.place(relx=0.5, rely=0.5, anchor="center")
-        elif self.strongholds.get_dont_set_spawn_colours() or self.purple:
+        elif self.strongholds.get_dont_set_spawn_colours() or self.purple: #you should never set spawn after purple gui, but get_dont_set_spawn doesnt know that
             self.spawn_frame = tk.Frame(self.root, height=70, width=280, bg=spawngreen)
             self.spawn_label = tk.Label(
                 self.spawn_frame,
@@ -469,6 +516,7 @@ class AllPortals:
 
 
     def set_bg_colours(self):
+        """colour codes the spawn point things so people dont forget surely they wont forget right suuuuurely"""
         if self.strongholds.get_leave_spawn():
             try:
                 self.empty_frame.destroy()
@@ -504,6 +552,7 @@ class AllPortals:
             self.set_hotkey_button.config(bg=button, activebackground=press)
             self.got_lost.config(bg=button, activebackground=press)
             self.sh_label.config(bg=frame)
+            self.setspawn_button.config(bg=button, activebackground=press)
             #these two have to be last
             self.empty_button.config(bg=button, activebackground=press)
             self.empty_frame.config(bg=frame)
@@ -512,23 +561,24 @@ class AllPortals:
 
 
     def display_next_sh(self):
+        """edit gui to show new coords and angle"""
         sh_data = self.strongholds.get_next_sh()
         print(
-            "Stronghold {0}:\n{1}, {2} blocks at angle {3}".format(
-                sh_data[0], sh_data[1], sh_data[2], sh_data[3]
+            "Stronghold {0}:\n{1} at angle {2}".format(
+                sh_data[0], sh_data[1], sh_data[3]
             )
         )  # print in case user needs to see previous locations
         self.sh_label.config(
-            text="Stronghold {0}:\n{1}, {2} blocks at angle {3}".format(
-                sh_data[0], sh_data[1], sh_data[2], sh_data[3]
+            text="Stronghold {0}:\n{1} at angle {2}".format(
+                sh_data[0], sh_data[1], sh_data[3]
             ),
-            font=("Cambria", 12),
+            font=("Cambria", 14),
         )
 
-    # finds next sh location and displays it
     def next_sh(self, last_empty: bool = False):
+        """completes the last stronghold and finds coords of next one and checks all the 8th ring stuff and optimizations and if its the last sh and whatever, last_empty is true if it is the empty sector"""
         try:
-            if self.empty_button.winfo_exists():
+            if self.empty_button.winfo_exists(): # i think this was how i used to count 8th ring strongholds? probably doesnt need to be here anymore
                 self.empty_button.destroy()
                 self.empty_frame.destroy()
                 print(
@@ -537,19 +587,22 @@ class AllPortals:
         except:
             pass
 
+        # very important
         if self.done:
             try:
                 self.sh_label.config(text=silly_list[self.silly_count])
                 self.silly_count += 1
             except IndexError:
                 self.new_buttons_frame.destroy()
-                self.bt_frame.config(height=110)
-                self.bt_frame.lift()
                 self.toggle_frame.destroy()
+                self.sh_frame.destroy()
+                self.bt_frame.place(x=0, y=0, anchor="nw")
+                self.bt_frame.config(height=110, width=280)
+                self.bt_frame.lift()
                 self.newnext_button.config(command=self.movebutton)
                 pass
 
-        elif self.strongholds.get_finished():
+        elif self.strongholds.get_finished(): # means the user is done filling portals and gives the graph a pretty little star :D
             try:
                 if (
                     self.strongholds.estimations.index(
@@ -585,36 +638,38 @@ class AllPortals:
             self.silly_count = 0
 
         else:
-            self.complete_sh(self.strongholds.get_next_sh_coords(), last_empty)
+            self.complete_sh(self.strongholds.get_next_sh_coords(), last_empty) # puts empty sector into empty_index in completed array if last_empty==true
             self.create_empty_widgets()
             try:
                 self.optimize_next_3_nodes()
             except IndexError:
-                pass #fixes errors in colour settings and somehow those errors mess with the graph so i gotta put this here
+                pass #has to be try/except cause this thing gives an error in the gui colour updates idk why man but then if u dont pass the error it makes the second last line blue in the graph
             self.update_image(last_empty)
             try:
-                print("leave your spawn behind?", self.strongholds.get_leave_spawn())
+                print("leave your spawn behind?", self.strongholds.get_leave_spawn()) # mostly correct but says true when on the sh before last 8th ring when its an empty sector cause at this point it still thinks ur going there
                 print(
-                    "don't set your spawn at all?", self.strongholds.get_dont_set_spawn()
+                    "don't set your spawn at all?", self.strongholds.get_dont_set_spawn() #this is always false here for some reason but its correct in optimize_next_3_nodes
                 )
             except IndexError:
                 pass
             self.display_next_sh()
 
     def optimize_next_3_nodes(self):
+        """sets your current location at your current location, which is complicated when you spawn at previous shs or 0 0"""
         self.strongholds.set_current_location(self.strongholds.get_last_sh_coords())
         self.set_bg_colours()
-        self.show_spawn()
-        if self.strongholds.get_last_path() == 2:
+        self.show_spawn() # bg colours and show spawn have to be here cause of the weird errors with get_leave_spawn and get_dont_set_spawn please dont move these
+        if self.strongholds.get_last_path() == 2: # spawn was left behind
             self.strongholds.set_current_location(
-                self.strongholds.get_last_sh_coords(-2)
+                self.strongholds.get_last_sh_coords(-2) #sets location at 2nd last sh coords which is where your spawn was left i think
             )
         if self.strongholds.get_dont_set_spawn():
-            self.strongholds.set_current_location((0, 0))
+            self.strongholds.set_current_location(self.strongholds.spawn) # sets location at spawn when it was optimal
             print("leave ur spawn behind at the next portal")
         print(get_nether_coords(self.strongholds.get_current_location()))
 
     def empty(self):
+        """tells the program you have found the empty sector, runs when empty button is pressed. graphs empty sector as red"""
         print("empty sector\n")
         try:
             self.empty_button.destroy()
@@ -637,6 +692,7 @@ class AllPortals:
             pass
 
     def skip_empty(self):
+        """skips empty sector in the rare case you find all 9 and this is the last place to check but you already know its empty. graphs empty sector as red"""
         print("empty sector\n")
         try:
             self.empty_button.destroy()
@@ -653,15 +709,22 @@ class AllPortals:
             )
             plt.draw()
         except Exception as e:
-            print("photo broken", e)
+            print("photo broken", e) # this was from some weird thing i edited in mimes code i couldnt figure out why this would ever raise an exception or what it means if it does
             pass
 
+        #self.complete_sh(self.strongholds.get_next_sh_coords(), True)
+
+        
+        # add empty sector to estimations??? for some reason??? also why cant it just use append
+        # nevermind it breaks without this
         self.strongholds.estimations.insert(
             len(self.strongholds.estimations), self.strongholds.get_next_sh_coords()
         )
+    
 
-    # redoes pathfinding from specific coords if user gets lost or something idk
     def find_from_coords(self):
+        """redoes pathfinding from specific coords if user gets lost or something idk"""
+        # has to find out if sh listed has been completed or not and maybe adds it to completed array
         msg = tk.messagebox.askyesno(
             message="Have you filled in the portal at the stronghold currently listed?"
         )
@@ -690,7 +753,10 @@ class AllPortals:
             self.pos = new_pos
             self.get_new_path()
 
+
     def get_new_path(self):
+        """redoes pathfinding with only the strongholds left and a new current location"""
+        print("GET NEW PATH")
         try:
             self.empty_button.destroy()
             self.empty_frame.destroy()
@@ -698,14 +764,18 @@ class AllPortals:
             pass
 
         #get new path
-        self.strongholds.estimate_sh_locations()
         write_nodes_qs_file(
-            self.strongholds.get_last_sh_coords(), self.strongholds.estimations
+            self.pos, self.strongholds.estimations[self.strongholds.get_completed_count()-8:-1]
         )
         self.strongholds.sort_estimations_order_by_path(read_path_qs_file())
 
+        self.create_empty_widgets()
+        try:
+            self.optimize_next_3_nodes()
+        except IndexError:
+            pass
+        self.update_image()
         self.display_next_sh()
-        self.create_empty_widgets() #no idea why this is here
 
     def set_next_hotkey(self):
         """sets hotkey to go to the next stronghold when you press the set hotkey button"""
@@ -722,6 +792,7 @@ class AllPortals:
         self.next_stronghold_hotkey = simpledialog.askstring("Input", "Enter a hotkey:")
         if self.next_stronghold_hotkey == "":
             self.set_hotkey_button.config(text="Next SH Hotkey", bg=colour)
+        #if the graph is your active window and you press q it closes it, and K and L will mess it up. Still happens if they arent your hotkey but hopefully this helps prevent it
         elif self.next_stronghold_hotkey == "k" or self.next_stronghold_hotkey == "l" or self.next_stronghold_hotkey == "q":
             tk.messagebox.showerror("no", "You cannont make this your hotkey.")
             self.set_hotkey_button.config(text="Next SH Hotkey", bg=colour)
@@ -732,11 +803,13 @@ class AllPortals:
             self.listener.start()
 
     def on_press(self, key):
+        """runs every time any key is pressed and checks if it's the next sh hotkey"""
         if get_key_string(key) == self.next_stronghold_hotkey:
             self.newnext_button.invoke()
             return
 
     def movebutton(self):
+        """moves the next button around like an aim trainer hehehehe"""
         x=random.uniform(0.1,0.9)
         y=random.uniform(0.1,0.9)
         self.newnext_button.place(relx=x, rely=y)
