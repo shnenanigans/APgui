@@ -36,6 +36,7 @@ class AllPortals:
         self.next_stronghold_hotkey = ""
         self.purple = False #true if the last stronghold is where your spawn should be
         self.done = False #true if you are done filling portals
+        self.pathfind_pressed = False
 
     def start(self):
         """actually start the window and program"""
@@ -574,9 +575,11 @@ class AllPortals:
             ),
             font=("Cambria", 14),
         )
+        print("NEXT SH DISPLAYED")
 
     def next_sh(self, last_empty: bool = False):
         """completes the last stronghold and finds coords of next one and checks all the 8th ring stuff and optimizations and if its the last sh and whatever, last_empty is true if it is the empty sector"""
+        print("PRESSED NEXT SH")
         try:
             if self.empty_button.winfo_exists(): # i think this was how i used to count 8th ring strongholds? probably doesnt need to be here anymore
                 self.empty_button.destroy()
@@ -586,6 +589,12 @@ class AllPortals:
                 )
         except:
             pass
+
+        """ stuff for 8th ring optimization
+        if self.strongholds.completed_8th_ring == 10 and not self.strongholds.empty_index:
+            self.strongholds.empty_index == 1
+            self.complete_sh()
+        """
 
         # very important
         if self.done:
@@ -638,6 +647,7 @@ class AllPortals:
             self.silly_count = 0
 
         else:
+            print(f"COMPLETED SH {self.strongholds.get_next_sh_coords()}")
             self.complete_sh(self.strongholds.get_next_sh_coords(), last_empty) # puts empty sector into empty_index in completed array if last_empty==true
             self.create_empty_widgets()
             try:
@@ -659,6 +669,10 @@ class AllPortals:
         self.strongholds.set_current_location(self.strongholds.get_last_sh_coords())
         self.set_bg_colours()
         self.show_spawn() # bg colours and show spawn have to be here cause of the weird errors with get_leave_spawn and get_dont_set_spawn please dont move these
+        if self.pathfind_pressed:
+            self.strongholds.set_current_location(self.pos)
+            self.pathfind_pressed=False
+            return
         if self.strongholds.get_last_path() == 2: # spawn was left behind
             self.strongholds.set_current_location(
                 self.strongholds.get_last_sh_coords(-2) #sets location at 2nd last sh coords which is where your spawn was left i think
@@ -752,6 +766,7 @@ class AllPortals:
         else:
             self.pos = new_pos
             self.get_new_path()
+            self.pathfind_pressed = True
 
 
     def get_new_path(self):
@@ -763,11 +778,32 @@ class AllPortals:
         except:
             pass
 
+        reverse_ests = self.strongholds.estimations[self.strongholds.get_completed_count()-8:]
+        unfinished_ests = reverse_ests[::-1]
+        print(unfinished_ests)
+        copied_estimations = self.strongholds.estimations.copy()
+
         #get new path
         write_nodes_qs_file(
-            self.pos, self.strongholds.estimations[self.strongholds.get_completed_count()-8:-1]
+            self.pos, unfinished_ests
         )
-        self.strongholds.sort_estimations_order_by_path(read_path_qs_file())
+        sorted_estimations = sort_estimations_order_by_path(read_path_qs_file(), unfinished_ests) #THIS GOES TO THE SORT_ESTIMATIONS IN UTILS ITS CONFUSING I KNOW IM SORRY
+        #ok that thing returns the sorted and optimized path for just the strongholds we havent been to yet
+        #now we gotta put them back into strongholds.estimations by overwriting whats already there
+        j=0
+        print("LENGTHS")
+        print(self.strongholds.get_completed_count())
+        print(len(self.strongholds.estimations))
+        print(len(sorted_estimations))
+        for i in range(self.strongholds.get_completed_count()-8, len(self.strongholds.estimations)):
+            self.strongholds.estimations[i] = sorted_estimations[j]
+            j += 1
+
+        print("\n\n\nEQUAL LENGTH???")
+        print(len(self.strongholds.estimations)==len(copied_estimations))
+        for i in range(len(self.strongholds.estimations)):
+            print(copied_estimations[i], self.strongholds.estimations[i], copied_estimations[i]==self.strongholds.estimations[i])
+        print("\n\n\n")
 
         self.create_empty_widgets()
         try:
@@ -776,6 +812,7 @@ class AllPortals:
             pass
         self.update_image()
         self.display_next_sh()
+        print("DONE GET NEW PATH")
 
     def set_next_hotkey(self):
         """sets hotkey to go to the next stronghold when you press the set hotkey button"""
@@ -792,7 +829,7 @@ class AllPortals:
         self.next_stronghold_hotkey = simpledialog.askstring("Input", "Enter a hotkey:")
         if self.next_stronghold_hotkey == "":
             self.set_hotkey_button.config(text="Next SH Hotkey", bg=colour)
-        #if the graph is your active window and you press q it closes it, and K and L will mess it up. Still happens if they arent your hotkey but hopefully this helps prevent it
+        #if the graph is your active window and you press Q it closes it, and K and L will mess it up. Still happens if they arent your hotkey but hopefully this helps prevent it
         elif self.next_stronghold_hotkey == "k" or self.next_stronghold_hotkey == "l" or self.next_stronghold_hotkey == "q":
             tk.messagebox.showerror("no", "You cannont make this your hotkey.")
             self.set_hotkey_button.config(text="Next SH Hotkey", bg=colour)

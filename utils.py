@@ -18,7 +18,7 @@ def is_prime(n):
 
 def write_nodes_qs_file(pos: tuple, estimations: list):
     """writes estimated sh list to qs file for concord to calculate"""
-    return
+    #return
     #get rid of the 'return' after testing
     with open("strongholds.qs", "w+") as qs_file:
         # write node count, edge count, and starting position to the qs file
@@ -201,3 +201,38 @@ def get_key_string(key):
         return str(key.char)
     else:
         return str(key).replace("Key.", "")
+
+
+def sort_estimations_order_by_path(path: dict, estimations: list) -> None:
+    """takes concord stuff and sorts estimations according to the path it gives, returns sorted array"""
+    sorted_estimations = []
+    print(len(estimations))
+    for destination in path.values(): # see qs file for path values, its the second number starting from where it starts giving you rows of 3 numbers
+        if destination < 1: # last path value is always 0, you've reached the end
+            continue
+        print(destination - 1)
+        print(estimations[destination - 1])
+        sorted_estimations.append(estimations[destination - 1]) # adds the next sh in optimal path to sorted_estimations
+        print(len(sorted_estimations))
+    print(sorted_estimations)
+    print(path)
+    return optimize_spawnpoint_abuse(sorted_estimations)
+
+
+def optimize_spawnpoint_abuse(estimations) -> None:
+    """if sh 2nd in the future (2) is closer to current one (0) than the next one (1) is, swap 2 and 1 in the estimations array. You will go from 0 -> 2, leave spawn, 2 -> 1, then continue from 2."""
+    sorted_estimations = estimations.copy()
+    i = 0
+    while i < len(estimations):
+        try:
+            if get_distance(
+                estimations[i], estimations[i + 2]
+            ) < get_distance(estimations[i], estimations[i + 1]):
+                print("swap made between", i + 10, i + 11) #this print statement is definitely very wrong here and i dont feel like figuring out the math to make it right
+                sorted_estimations[i + 1], sorted_estimations[i + 2] = (
+                    estimations[i + 2],
+                    estimations[i + 1],
+                )
+        except IndexError:
+            return sorted_estimations
+        i += 1

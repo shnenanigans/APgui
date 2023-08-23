@@ -100,7 +100,7 @@ class Strongholds:
         #returns index of empty sh in completed array
         return self.empty_index
 
-    def get_next_sh(self) -> [int, tuple, tuple, int, float]:
+    def get_next_sh(self) -> [int, tuple, int, float]:
         """returns # completed shs, next sh nether coords, distance to next sh (in nether), angle to next sh"""
         next_n_coords = get_nether_coords(self.get_next_sh_coords())
         return (
@@ -150,6 +150,7 @@ class Strongholds:
         # 0 = default path
         # 1 = skipped and left spawn
         # 2 = left spawn behind
+        #i asked mach what the difference between 'skipped and left spawn' and 'left spawn behind' was and she said technically nothing anymore so do with that information what you will
         distances = [
             get_distance(self.get_last_sh_coords(-2), self.get_last_sh_coords(-1))
             + get_distance(self.get_last_sh_coords(-1), self.get_next_sh_coords(1)),
