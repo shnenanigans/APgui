@@ -30,6 +30,7 @@ redo pathfinding at last 8th ring sh if no empty sector yet
 fix graph for repathfind
 fix different monitory res (test)
 fix x on qs file messageboxes
+place/grid in silly
 """
 
 class AllPortals:
@@ -204,7 +205,8 @@ class AllPortals:
             offvalue=0,
             command=lambda: self.root.wm_attributes("-topmost", always_on_top.get()),
         )
-        self.topmost_toggle.place(relx=0.5, rely=0.5, anchor="center")
+        #self.topmost_toggle.place(relx=0.5, rely=0.5, anchor="center")
+        self.topmost_toggle.pack(expand="true")
 
         # labels for the entry boxes and locks to save each coord into a list of first strongholds
         self.sh_labels = [
@@ -283,9 +285,11 @@ class AllPortals:
         self.sh_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.sh_label = tk.Label(self.sh_frame, text="", bg=lightblue)
         self.inst_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
-        self.sh_label.place(relx=0.5, rely=0.5, anchor="center")
+        #self.sh_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.sh_label.pack(expand="true")
         self.inst_label = tk.Label(self.inst_frame, text="", bg=lightblue)
-        self.inst_label.place(relx=0.5, rely=0.5, anchor="center")
+        #self.inst_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.inst_label.pack(expand="true")
 
         # bt means buttons as in 'next' and 'empty' buttons not buried treasure sorry
         self.bt_frame = tk.Frame(self.root, height=40, width=280, bg=lightblue)
@@ -314,8 +318,10 @@ class AllPortals:
             activebackground=pressblue,
         )
 
-        self.newnext_button.place(relx=0.33, rely=0.5, anchor="center")
-        self.set_hotkey_button.place(relx=0.9, rely=0.85, anchor="center")
+        #self.newnext_button.place(relx=0.33, rely=0.5, anchor="center")
+        #self.set_hotkey_button.place(relx=0.9, rely=0.85, anchor="center")
+        self.newnext_button.grid(row=1, column=1)
+        self.set_hotkey_button.pack(expand="true")
         #self.sh_frame.place(x=0, y=0)
         #self.bt_frame.place(x=0, y=70)
         #self.toggle_frame.place(x=280, y=0)
@@ -349,10 +355,12 @@ class AllPortals:
 
         #self.new_buttons_frame.place(x=280, y=70)
         self.new_buttons_frame.grid(row=2, rowspan=2, column=2)
-        self.set_hotkey_button.place(relx=0.5, rely=0.25, anchor="center")
-        self.setspawn_button.place(relx=0.5, rely=0.5, anchor="center")
-        self.got_lost.place(relx=0.5, rely=0.75, anchor="center")
-
+        #self.set_hotkey_button.place(relx=0.5, rely=0.25, anchor="center")
+        #self.setspawn_button.place(relx=0.5, rely=0.5, anchor="center")
+        #self.got_lost.place(relx=0.5, rely=0.75, anchor="center")
+        self.set_hotkey_button.grid(row=1, column=1)
+        self.setspawn_button.grid(row=2, column=1)
+        self.got_lost.grid(row=3, column=1)
 
         # make a new tkinter window for the graph, has to be toplevel not a whole new tkinter thingy cause it cant multithread or something
         image=tk.Toplevel()
@@ -512,7 +520,8 @@ class AllPortals:
             activebackground=pressblue,
         )
         #self.empty_sector.place(relx=0.5, rely=0.5, anchor="center")
-        self.empty_button.place(relx=0.66, rely=0.5, anchor="center")
+        #self.empty_button.place(relx=0.66, rely=0.5, anchor="center")
+        self.empty_button.grid(row=1, column=2)
 
     def show_spawn(self):
         """edits gui to tell user when to set spawn/not set spawn"""
@@ -642,7 +651,7 @@ class AllPortals:
             self.strongholds.empty_index == 1
             self.complete_sh()
         """
-        # very important
+        # very important, fix place/grid stuff later
         if self.done:
             try:
                 self.sh_label.config(text=silly_list[self.silly_count])
