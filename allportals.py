@@ -26,10 +26,9 @@ make pathfind from coords work
 subprocess.run for running concord and adding concord to exe (dank)
 comment code :D
 fix readme
-hotkey button turns blue if you edit it while gui is green
 redo pathfinding at last 8th ring sh if no empty sector yet
 fix graph for repathfind
-fix different monitory res
+fix different monitory res (test)
 fix x on qs file messageboxes
 """
 
@@ -279,9 +278,9 @@ class AllPortals:
 
         # puts some nice lil frames in the gui and then the buttons go in the frames and its 10000x easier to have everything where you want it to go
         self.root.config(bg=lightblue)
-        self.toggle_frame.config(height=70, width=200, bg="pink")
+        self.toggle_frame.config(height=70, width=200, bg=lightblue)
         self.topmost_toggle.config(bg=lightblue, activebackground=pressblue)
-        self.sh_frame = tk.Frame(self.root, height=70, width=280, bg="blue")
+        self.sh_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.sh_label = tk.Label(self.sh_frame, text="", bg=lightblue)
         self.inst_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.sh_label.place(relx=0.5, rely=0.5, anchor="center")
@@ -289,7 +288,7 @@ class AllPortals:
         self.inst_label.place(relx=0.5, rely=0.5, anchor="center")
 
         # bt means buttons as in 'next' and 'empty' buttons not buried treasure sorry
-        self.bt_frame = tk.Frame(self.root, height=40, width=280, bg="orange")
+        self.bt_frame = tk.Frame(self.root, height=40, width=280, bg=lightblue)
         self.newnext_button = tk.Button(
             self.bt_frame,
             text="next",
@@ -303,7 +302,7 @@ class AllPortals:
 
         # frame for the hotkey and repathfind buttons
         self.new_buttons_frame = tk.Frame(
-            self.root, height=120, width=200, bg="purple"
+            self.root, height=120, width=200, bg=lightblue
         )
 
         self.set_hotkey_button = tk.Button(
@@ -868,11 +867,7 @@ class AllPortals:
 
     def set_next_hotkey(self):
         """sets hotkey to go to the next stronghold when you press the set hotkey button"""
-        colour = buttonblue
-        if self.strongholds.get_leave_spawn():
-            colour = buttonpurple
-        elif self.strongholds.get_dont_set_spawn_colours():
-            colour = buttongreen
+        colour = self.set_hotkey_button.cget("background")
         try:
             self.listener.stop()
         except:
