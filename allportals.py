@@ -19,14 +19,18 @@ next button disabled
 qs file reading
 first 8 strongholds list
 delete print statements
+2 read path qs file tests
 
 THINGS TO FIX
 make pathfind from coords work
 subprocess.run for running concord and adding concord to exe (dank)
 comment code :D
-fix empty sector turning purple
 fix readme
 hotkey button turns blue if you edit it while gui is green
+redo pathfinding at last 8th ring sh if no empty sector yet
+fix graph for repathfind
+fix different monitory res
+fix x on qs file messageboxes
 """
 
 class AllPortals:
@@ -45,7 +49,6 @@ class AllPortals:
         self.build_window()
         self.create_inital_widgets()
         self.root.mainloop()
-
 
     def build_window(self):
         """creates the base starting window for the program"""
@@ -145,7 +148,16 @@ class AllPortals:
             self.strongholds.get_last_sh_coords(), self.strongholds.estimations
         )
 
-        self.strongholds.sort_estimations_order_by_path(read_path_qs_file())
+        path = read_path_qs_file()
+
+        if path=="stop":
+            next_button.config(
+                state="normal"
+            )
+            self.strongholds.estimations=[]
+            return
+
+        self.strongholds.sort_estimations_order_by_path(path)
 
         # get rid of all widgets from the first-strongholds part
         for lock in self.locks:
@@ -154,6 +166,7 @@ class AllPortals:
             sh.destroy()
         for entry in self.entries:
             entry.destroy()
+        self.lock_order_label.destroy()
 
         print(
             *zip(
@@ -249,12 +262,12 @@ class AllPortals:
         [self.locks[i].grid(row=i, column=5) for i in range(0, 8)]
 
         # label telling user to lock in order so that the image updates accurately
-        lock_order_label = tk.Label(
+        self.lock_order_label = tk.Label(
             self.root,
             text="Please make sure you\nlock strongholds in the\norder you found them",
             bg=peach,
         )
-        lock_order_label.grid(row=3, column=6, rowspan=3)
+        self.lock_order_label.grid(row=3, column=6, rowspan=3)
 
         self.setspawn_button.grid(row=7, column=6)
         next_button.grid(row=9, column=6)
@@ -266,14 +279,17 @@ class AllPortals:
 
         # puts some nice lil frames in the gui and then the buttons go in the frames and its 10000x easier to have everything where you want it to go
         self.root.config(bg=lightblue)
-        self.toggle_frame.config(height=70, width=200, bg=lightblue)
+        self.toggle_frame.config(height=70, width=200, bg="pink")
         self.topmost_toggle.config(bg=lightblue, activebackground=pressblue)
-        self.sh_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
+        self.sh_frame = tk.Frame(self.root, height=70, width=280, bg="blue")
         self.sh_label = tk.Label(self.sh_frame, text="", bg=lightblue)
+        self.inst_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.sh_label.place(relx=0.5, rely=0.5, anchor="center")
+        self.inst_label = tk.Label(self.inst_frame, text="", bg=lightblue)
+        self.inst_label.place(relx=0.5, rely=0.5, anchor="center")
 
         # bt means buttons as in 'next' and 'empty' buttons not buried treasure sorry
-        self.bt_frame = tk.Frame(self.root, height=40, width=280, bg=lightblue)
+        self.bt_frame = tk.Frame(self.root, height=40, width=280, bg="orange")
         self.newnext_button = tk.Button(
             self.bt_frame,
             text="next",
@@ -287,7 +303,7 @@ class AllPortals:
 
         # frame for the hotkey and repathfind buttons
         self.new_buttons_frame = tk.Frame(
-            self.root, height=120, width=200, bg=lightblue
+            self.root, height=120, width=200, bg="purple"
         )
 
         self.set_hotkey_button = tk.Button(
@@ -301,9 +317,13 @@ class AllPortals:
 
         self.newnext_button.place(relx=0.33, rely=0.5, anchor="center")
         self.set_hotkey_button.place(relx=0.9, rely=0.85, anchor="center")
-        self.sh_frame.place(x=0, y=0)
-        self.bt_frame.place(x=0, y=70)
-        self.toggle_frame.place(x=280, y=0)
+        #self.sh_frame.place(x=0, y=0)
+        #self.bt_frame.place(x=0, y=70)
+        #self.toggle_frame.place(x=280, y=0)
+        self.sh_frame.grid(row=1, column=1)
+        self.bt_frame.grid(row=2, column=1)
+        self.toggle_frame.grid(row=1, column=2, rowspan=1)
+        self.inst_frame.grid(row=3, column=1)
 
         # button for repathfinding probably shouldve found a better name than 'got lost' oh well
         self.got_lost = tk.Button(
@@ -328,7 +348,8 @@ class AllPortals:
         if self.strongholds.spawn != (0, 0):
             self.setspawn_button.config(text=f"Spawnpoint: {self.strongholds.spawn}")
 
-        self.new_buttons_frame.place(x=280, y=70)
+        #self.new_buttons_frame.place(x=280, y=70)
+        self.new_buttons_frame.grid(row=2, rowspan=2, column=2)
         self.set_hotkey_button.place(relx=0.5, rely=0.25, anchor="center")
         self.setspawn_button.place(relx=0.5, rely=0.5, anchor="center")
         self.got_lost.place(relx=0.5, rely=0.75, anchor="center")
@@ -353,7 +374,7 @@ class AllPortals:
         thang.get_tk_widget().place(relx=0.5, rely=0.5, anchor="center")
 
         #this is meant to be edited by the user to just show coords and next/empty button, which is why all the widgets are placed and not flexible or dependent on window size
-        self.root.geometry("480x190")
+        #self.root.geometry("480x190")
 
     def set_spawn(self):
         spawn = self.strongholds.set_spawn()
@@ -465,13 +486,20 @@ class AllPortals:
         #this will usually not show up now cause of the dont set spawn thing which i think is more important than explaining that there could be no stronghold
         #well technically it does show up its just replaced immediately
         #wonder why the gui lags huh thats crazy
+        """
         self.empty_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
         self.empty_sector = tk.Label(
             self.empty_frame,
             text="8th ring, there could be\nno stronghold",
             bg=lightblue,
         )
-        self.empty_frame.place(x=0, y=110)
+        #self.empty_frame.place(x=0, y=110)
+        self.empty_frame.grid(row=3, column=1)
+        """
+        self.inst_label.config(
+            text="8th ring, there could be\nno stronghold",
+            bg=lightblue,
+        )
 
         #this will always show up (unless user has already found the empty one)
         self.empty_button = tk.Button(
@@ -484,18 +512,21 @@ class AllPortals:
             bg=buttonblue,
             activebackground=pressblue,
         )
-        self.empty_sector.place(relx=0.5, rely=0.5, anchor="center")
+        #self.empty_sector.place(relx=0.5, rely=0.5, anchor="center")
         self.empty_button.place(relx=0.66, rely=0.5, anchor="center")
 
     def show_spawn(self):
         """edits gui to tell user when to set spawn/not set spawn"""
         #i know this code could be way more optimized leave me alone
+        """
         try:
             self.spawn_label.destroy()
             self.spawn_frame.destroy() # sometimes these dont exist
         except:
             pass
+        """
         if self.strongholds.get_leave_spawn():
+            """
             self.spawn_frame = tk.Frame(self.root, height=70, width=280, bg=spawnpurple)
             self.spawn_label = tk.Label(
                 self.spawn_frame,
@@ -504,15 +535,27 @@ class AllPortals:
             )
             self.spawn_frame.place(x=0, y=110)
             self.spawn_label.place(relx=0.5, rely=0.5, anchor="center")
+            """
+            self.inst_label.config(
+                text="LEAVE YOUR SPAWN AT THE NEXT STRONGHOLD.\nDO NOT BREAK BED AFTER FILLING PORTAL.",
+                bg=spawnpurple,
+            )
         elif self.strongholds.get_dont_set_spawn_colours() or self.purple: #you should never set spawn after purple gui, but get_dont_set_spawn doesnt know that
+            """
             self.spawn_frame = tk.Frame(self.root, height=70, width=280, bg=spawngreen)
             self.spawn_label = tk.Label(
                 self.spawn_frame,
                 text="DO NOT SET YOUR SPAWN\nAT THE NEXT STRONGHOLD",
                 bg=spawngreen,
             )
-            self.spawn_frame.place(x=0, y=110)
+            #self.spawn_frame.place(x=0, y=110)
+            self.spawn_frame.grid(row=3, column=1)
             self.spawn_label.place(relx=0.5, rely=0.5, anchor="center")
+            """
+            self.inst_label.config(
+                text="DO NOT SET YOUR SPAWN\nAT THE NEXT STRONGHOLD",
+                bg=spawngreen,
+            )
             self.purple = False
 
 
@@ -520,6 +563,7 @@ class AllPortals:
         """colour codes the spawn point things so people dont forget surely they wont forget right suuuuurely"""
         if self.strongholds.get_leave_spawn():
             try:
+                self.inst_label.config(text="")
                 self.empty_frame.destroy()
                 self.empty_sector.destroy()
             except:
@@ -530,6 +574,7 @@ class AllPortals:
             self.purple = True
         elif self.strongholds.get_dont_set_spawn_colours() or self.purple:
             try:
+                self.inst_label.config(text="")
                 self.empty_frame.destroy()
                 self.empty_sector.destroy()
             except:
@@ -554,6 +599,8 @@ class AllPortals:
             self.got_lost.config(bg=button, activebackground=press)
             self.sh_label.config(bg=frame)
             self.setspawn_button.config(bg=button, activebackground=press)
+            self.inst_frame.config(bg=frame)
+            self.inst_label.config(bg=frame)
             #these two have to be last
             self.empty_button.config(bg=button, activebackground=press)
             self.empty_frame.config(bg=frame)
@@ -580,10 +627,11 @@ class AllPortals:
     def next_sh(self, last_empty: bool = False):
         """completes the last stronghold and finds coords of next one and checks all the 8th ring stuff and optimizations and if its the last sh and whatever, last_empty is true if it is the empty sector"""
         print("PRESSED NEXT SH")
+        self.inst_label.config(text="")
         try:
             if self.empty_button.winfo_exists(): # i think this was how i used to count 8th ring strongholds? probably doesnt need to be here anymore
                 self.empty_button.destroy()
-                self.empty_frame.destroy()
+                #self.empty_frame.destroy()
                 print(
                     f"you have found {self.strongholds.get_completed_in_ring(8)} 8th ring strongholds\n"
                 )
@@ -595,7 +643,6 @@ class AllPortals:
             self.strongholds.empty_index == 1
             self.complete_sh()
         """
-
         # very important
         if self.done:
             try:
@@ -605,6 +652,7 @@ class AllPortals:
                 self.new_buttons_frame.destroy()
                 self.toggle_frame.destroy()
                 self.sh_frame.destroy()
+                self.inst_frame.destroy()
                 self.bt_frame.place(x=0, y=0, anchor="nw")
                 self.bt_frame.config(height=110, width=280)
                 self.bt_frame.lift()
@@ -687,6 +735,7 @@ class AllPortals:
         print("empty sector\n")
         try:
             self.empty_button.destroy()
+            self.inst_label.config(text="")
             self.empty_frame.destroy()
         except:
             pass
@@ -710,6 +759,7 @@ class AllPortals:
         print("empty sector\n")
         try:
             self.empty_button.destroy()
+            self.inst_label.config(text="")
             self.empty_frame.destroy()
         except:
             pass
@@ -774,6 +824,7 @@ class AllPortals:
         print("GET NEW PATH")
         try:
             self.empty_button.destroy()
+            self.inst_label.config(text="")
             self.empty_frame.destroy()
         except:
             pass
@@ -787,6 +838,7 @@ class AllPortals:
         write_nodes_qs_file(
             self.pos, unfinished_ests
         )
+        #CHANGE AFTER TESTING
         sorted_estimations = sort_estimations_order_by_path(read_path_qs_file(), unfinished_ests) #THIS GOES TO THE SORT_ESTIMATIONS IN UTILS ITS CONFUSING I KNOW IM SORRY
         #ok that thing returns the sorted and optimized path for just the strongholds we havent been to yet
         #now we gotta put them back into strongholds.estimations by overwriting whats already there
