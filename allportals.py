@@ -32,6 +32,7 @@ finish centering widgets
 fix x on qs file messageboxes
 place/grid in silly
 do colours in unscuffed way
+disable next button for repathfinding
 """
 
 class AllPortals:
