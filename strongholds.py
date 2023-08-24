@@ -11,7 +11,7 @@ class Strongholds:
     def __init__(self) -> None:
         # starting strongholds testing array
         """
-        self.oldcompleted = [
+        self.completed = [
             (1512, -104),
             (5736, -712),
             (7512, 2280),
