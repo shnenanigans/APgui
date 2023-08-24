@@ -10,8 +10,8 @@ from utils import *
 class Strongholds:
     def __init__(self) -> None:
         # starting strongholds testing array
-        #"""
-        self.completed = [
+        """
+        self.oldcompleted = [
             (1512, -104),
             (5736, -712),
             (7512, 2280),
@@ -20,6 +20,18 @@ class Strongholds:
             (17704, -312),
             (20920, 1160),
             (23528, -920),
+        ]
+        """
+        #"""
+        self.completed = [
+            (885, 2419),
+            (-1036, 4725),
+            (-120, 8616),
+            (-1192, 10872),
+            (296, 14456),
+            (744, 17624),
+            (-600, 19896),
+            (392, 23320),
         ]
         #"""
         #self.completed = []

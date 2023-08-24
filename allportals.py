@@ -28,7 +28,7 @@ comment code :D
 fix readme
 redo pathfinding at last 8th ring sh if no empty sector yet
 fix graph for repathfind (impossible)
-fix different monitory res (test)
+finish centering widgets
 fix x on qs file messageboxes
 place/grid in silly
 do colours in unscuffed way
@@ -280,18 +280,18 @@ class AllPortals:
         self.noGraph = False # i still have no idea what either of these do
 
         self.root.config(bg=lightblue)
-        self.toggle_frame.config(height=70, width=200, bg="green")
+        self.toggle_frame.config(height=70, width=200, bg=lightblue)
         self.topmost_toggle.config(bg=lightblue, activebackground=pressblue)
 
         # puts some nice lil frames in the gui and then the buttons go in the frames and its 10000x easier to have everything where you want it to go
-        self.sh_frame = tk.Frame(self.root, height=70, width=280, bg="pink")
-        self.bt_frame = tk.Frame(self.root, height=40, width=280, bg="purple")
-        self.new_buttons_frame = tk.Frame(self.root, height=120, width=200, bg="blue")
-        self.inst_frame = tk.Frame(self.root, height=70, width=280, bg="red")
+        self.sh_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
+        self.bt_frame = tk.Frame(self.root, height=40, width=280, bg=lightblue)
+        self.new_buttons_frame = tk.Frame(self.root, height=120, width=200, bg=lightblue)
+        self.inst_frame = tk.Frame(self.root, height=70, width=280, bg=lightblue)
 
         #frames inside frame for next/empty buttons
-        self.newnext_button_frame = tk.Frame(self.bt_frame, height=40, width=140, bg="yellow")
-        self.empty_button_frame = tk.Frame(self.bt_frame, height=40, width=140, bg="orange")
+        self.newnext_button_frame = tk.Frame(self.bt_frame, height=40, width=140, bg=lightblue)
+        self.empty_button_frame = tk.Frame(self.bt_frame, height=40, width=140, bg=lightblue)
         #put button frames into bt_frame
         self.newnext_button_frame.grid(row=1, column=1)
         self.empty_button_frame.grid(row=1, column=2)
@@ -305,6 +305,10 @@ class AllPortals:
         #grid propogate cause the stuff in them uses grid not pack
         self.bt_frame.grid_propagate("false")
         self.new_buttons_frame.grid_propagate("false")
+
+        #center the widgets (thanks pncake)
+        self.new_buttons_frame.grid_columnconfigure(0, weight=1)
+        #add toggle here
 
         #labels for sh location and when to set spawn/not set spawn/find empty sector
         self.sh_label = tk.Label(self.sh_frame, text="", bg=lightblue)
@@ -591,6 +595,27 @@ class AllPortals:
     def next_sh(self, last_empty: bool = False):
         """completes the last stronghold and finds coords of next one and checks all the 8th ring stuff and optimizations and if its the last sh and whatever, last_empty is true if it is the empty sector"""
         print("PRESSED NEXT SH")
+
+        # optimization for when last 8th ring is empty
+        if self.strongholds.completed_8th_ring == 9 and not self.strongholds.empty_index:
+            for elem in self.strongholds.estimations[self.strongholds.get_completed_count():]: # check strongholds left in estimations for empty sector, elem contains just coords
+                if get_stronghold_ring(elem)==8:
+                    self.complete_sh(elem, True) # puts empty ring as the last completed sh
+                    self.strongholds.empty_index == self.strongholds.get_completed_count() # sets index of empty sector in completed sh array
+                    self.strongholds.estimations.remove(elem) # gets it out of estimations for the new pathfinding
+                    
+                    # plot empty sector
+                    self.point = plt.scatter(
+                        *elem,
+                        c="red",
+                        s=50,
+                    )
+                    plt.draw()
+
+            self.find_from_coords(True)
+            return
+
+        
         self.inst_label.config(text="")
         self.empty_button.config(state="disabled")
 
@@ -734,37 +759,44 @@ class AllPortals:
         )
     
 
-    def find_from_coords(self):
-        """redoes pathfinding from specific coords if user gets lost or something idk"""
+    def find_from_coords(self, auto: bool=False):
+        """sets current location. Auto is false when user presses the button, true when program finds 8th ring optimization on its own"""
         # has to find out if sh listed has been completed or not and maybe adds it to completed array
-        msg = tk.messagebox.askyesno(
-            message="Have you filled in the portal at the stronghold currently listed?"
-        )
-        if msg:
-            self.complete_sh(self.strongholds.get_next_sh_coords(), False) #setting this to 'False' could theoretically cause a bug if the user does this on the empty 8th ring sh before pressing 'empty'... but that wouldnt happen probably... surely...
-            self.update_image()
-
-        new_coords = tk.simpledialog.askstring(
-            "",
-            "Type out your x and z coordinates you want to start pathfinding from (OW):",
-        )
-        try:
-            new_pos = tuple(parse_input(new_coords))
-        except:
-            tk.messagebox.showerror(
-                message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
+        if not auto:
+            msg = tk.messagebox.askyesno(
+                message="Have you filled in the portal at the stronghold currently listed?"
             )
-            return
+            if msg:
+                self.complete_sh(self.strongholds.get_next_sh_coords(), False) #setting this to 'False' could theoretically cause a bug if the user does this on the empty 8th ring sh before pressing 'empty'... but that wouldnt happen probably... surely...
+                self.update_image()
 
-        if not new_pos:
-            tk.messagebox.showerror(
-                message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
+            new_coords = tk.simpledialog.askstring(
+                "",
+                "Type out your x and z coordinates you want to start pathfinding from (OW):",
             )
-            return
-        else:
+            try:
+                new_pos = tuple(parse_input(new_coords))
+            except:
+                tk.messagebox.showerror(
+                    message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
+                )
+                return
+
+            if not new_pos:
+                tk.messagebox.showerror(
+                    message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
+                )
+                return
             self.pos = new_pos
             self.get_new_path()
             self.pathfind_pressed = True
+
+        else:
+            self.pos = self.strongholds.get_next_sh_coords() # has to be next cause of where this program is run before this sh is added to completed_shs list
+            self.pathfind_pressed = True
+            self.get_new_path()
+
+
 
 
     def get_new_path(self):
@@ -773,8 +805,9 @@ class AllPortals:
         self.empty_button.config(state="disabled")
         self.inst_label.config(text="")
 
-        reverse_ests = self.strongholds.estimations[self.strongholds.get_completed_count()-8:]
-        unfinished_ests = reverse_ests[::-1]
+        reverse_ests = self.strongholds.estimations[self.strongholds.get_completed_count()-8:] # for some reason this makes it backwards so we gotta reverse it
+        print(f"ADDING LENGTHS OF ARRAYS: {len(reverse_ests) + self.strongholds.get_completed_count()}")
+        unfinished_ests = reverse_ests[::-1] # using the reverse method didnt work dont ask idk
         print(unfinished_ests)
         copied_estimations = self.strongholds.estimations.copy()
 
