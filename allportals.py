@@ -11,7 +11,9 @@ from tkinter import messagebox
 from constants import *
 from utils import *
 from strongholds import Strongholds
+from strongholds import Stronghold
 import random
+import os
 
 """
 THINGS TO SET BACK TO NORMAL AFTER TESTING
@@ -28,10 +30,11 @@ comment code :D
 fix readme
 fix graph for repathfind (impossible)
 place/grid in silly
-do colours in unscuffed way
-make a set label function for the inst label
-leave spawn happens twice
+leave spawn happens twice surely this gets fixed with new pathfinding
 FIX X IN COORDS BOX FOR REPATHFINDING
+completedcount-8 is wrong after empty sector probably
+pathfinding despairge
+empty button stays empty
 """
 
 class AllPortals:
@@ -39,7 +42,6 @@ class AllPortals:
         self.strongholds = Strongholds()
 
         self.next_stronghold_hotkey = ""
-        self.purple = False #true if the last stronghold is where your spawn should be
         self.done = False #true if you are done filling portals
         self.pathfind_pressed = False
 
@@ -72,7 +74,7 @@ class AllPortals:
             and self.strongholds.get_completed_count()
             == self.strongholds.get_empty_sh_index()
         ):
-            return
+            return #doesnt add 1 if you just found empty sector
 
         with open("sh_count.txt", "w+") as count_file:
             count_file.write(str(self.strongholds.get_completed_count()) + "/128\n")
@@ -87,9 +89,9 @@ class AllPortals:
             if is_prime(self.strongholds.get_completed_count()):
                 facts_file.writelines(["(prime)\n"])
 
-    def complete_sh(self, sh, empty=False):
+    def complete_sh(self, sh):
         """add stronghold to completed shs array and update count"""
-        self.strongholds.complete_sh(sh, empty)
+        self.strongholds.complete_sh(sh)
         self.update_count()
 
     def lock_entry(
@@ -120,9 +122,10 @@ class AllPortals:
                 + ".\nIf you are completely sure this is in the right ring and my program is stupid then click 'yes', otherwise hit 'no' and enter coords again"
             ):
                 return
-
+            
+        sh = Stronghold(sh, ring)
         self.complete_sh(sh)
-        self.strongholds.set_current_location(sh)
+        self.strongholds.set_current_location(sh.get_coords())
         self.update_image()
         plt.draw()
         # plt.savefig("output.png", bbox_inches="tight", transparent=True)
@@ -134,10 +137,10 @@ class AllPortals:
         if self.strongholds.get_completed_count() == 8:
             next_button.config(state="normal") # allow user to press next
 
-    def check_next(self, next_button):
+    def check_next(self):
         """checks each sh location is locked before changing window setup and predicts other sh locations"""
 
-        next_button.config(
+        self.next_button.config(
             state="disabled"
         )  # very silly things happen if you press the next button twice...
 
@@ -146,19 +149,36 @@ class AllPortals:
         self.strongholds.estimate_sh_locations()
 
         write_nodes_qs_file(
-            self.strongholds.get_last_sh_coords(), self.strongholds.estimations
+            self.strongholds.get_last_sh_coords(), self.strongholds.estimations #estimations does not contain stronghold objects yet, just tuples
         )
 
         path = read_path_qs_file()
 
-        if path=="stop":
-            next_button.config(
+        if path=="stop": #not sure if this actually does anything at all
+            self.next_button.config(
                 state="normal"
             )
             self.strongholds.estimations=[]
             return
 
-        self.strongholds.sort_estimations_order_by_path(path)
+        self.strongholds.sort_estimations_order_by_path(path) # now estimations has sh objects
+
+        image_ests = [] # has to have a list of just coords cause idk how else to do the next part
+        for sh in self.strongholds.estimations:
+            image_ests.append(sh.get_coords())
+
+        try:
+            plt.scatter(
+                *zip(*image_ests),
+                c="gray",
+                s=20,
+            ) # puts fun little dots on the graph
+            plt.draw()
+        except:
+            self.strongholds.estimations = []
+            self.next_button.config(state="normal")
+            tk.messagebox.showerror("no", "solve and save the qs file idiot")
+            return
 
         # get rid of all widgets from the first-strongholds part
         for lock in self.locks:
@@ -168,33 +188,19 @@ class AllPortals:
         for entry in self.entries:
             entry.destroy()
         self.lock_order_label.destroy()
-
-        print(
-            *zip(
-                *(
-                    tuple(round(coord / 16) for coord in sh)
-                    for sh in self.strongholds.estimations
-                )
-            )
-        )
-        plt.scatter(
-            *zip(*self.strongholds.estimations),
-            c="gray",
-            s=20,
-        ) # puts fun little dots on the graph
-        plt.draw()
+        self.backups_button.destroy()
 
         self.setspawn_button.destroy()
         self.setup_next()
-        next_button.destroy()
+        self.next_button.destroy()
         self.display_next_sh()
         self.update_image()
 
     def create_inital_widgets(self):
         """create the window for entering your first 8 sh locations"""
         # toggles window always on top or not
-        self.toggle_frame = tk.Frame(self.root, width=150, height=20, bg=peach)
-        self.toggle_frame.grid(row=1, column=6, rowspan=2)
+        self.toggle_frame = tk.Frame(self.root)
+        self.toggle_frame.grid(row=1, column=6)
         always_on_top = tk.IntVar(self.root)
         self.topmost_toggle = tk.Checkbutton(
             self.toggle_frame,
@@ -206,8 +212,17 @@ class AllPortals:
             offvalue=0,
             command=lambda: self.root.wm_attributes("-topmost", always_on_top.get()),
         )
-
         self.topmost_toggle.pack()
+
+        #button to use latest backups folder so user doesnt have to manually put them all in
+        self.backups_button = tk.Button(
+            self.root,
+            bg=darkpeach,
+            activebackground=lightpeach,
+            text="Use Last Backup",
+            command=self.use_backup,
+        )
+        self.backups_button.grid(row=2, column=6)
 
         # labels for the entry boxes and locks to save each coord into a list of first strongholds
         self.sh_labels = [
@@ -228,11 +243,11 @@ class AllPortals:
 
         # goes to next stage, only works once all 8 locations have been locked
         # IF TESTING U CAN SET THE STATE TO "normal" SO U CAN EASILY USE THE TEST SH LOCATIONS IN STRONGHOLDS.PY
-        next_button = tk.Button(
+        self.next_button = tk.Button(
             self.root,
             state="normal",
             text="next",
-            command=lambda: self.check_next(next_button),
+            command=self.check_next,
             bg=darkpeach,
             activebackground=lightpeach,
         )
@@ -258,7 +273,7 @@ class AllPortals:
         for i in range(0, 8):
             self.locks[i].config(
                 command=lambda i=i: self.lock_entry(
-                    i + 1, self.entries[i], self.locks[i], next_button
+                    i + 1, self.entries[i], self.locks[i], self.next_button
                 )
             )
         [self.locks[i].grid(row=i, column=5) for i in range(0, 8)]
@@ -272,7 +287,26 @@ class AllPortals:
         self.lock_order_label.grid(row=3, column=6, rowspan=3)
 
         self.setspawn_button.grid(row=7, column=6)
-        next_button.grid(row=9, column=6)
+        self.next_button.grid(row=9, column=6)
+
+    def use_backup(self):
+        path = (os.getcwd() + "\\backups")
+        with open(path + "\\" + os.listdir(path)[0], "r") as f:
+            lines = f.readlines()
+            coords=[]
+            for sh in lines[:-1]:
+                coords.append(sh[:-1])
+            coords.append(lines[-1])
+        for coord in coords:
+            sh = tuple(parse_input(coord))
+            print(self.strongholds.get_completed_count())
+            sh = Stronghold(sh, get_stronghold_ring(sh))
+            self.complete_sh(sh)
+            self.strongholds.set_current_location(sh.get_coords())
+            self.update_image()
+            plt.draw()
+        self.check_next()
+        return
 
     def setup_next(self):
         """changes entire window setup to just display sh coords and some options"""
@@ -408,32 +442,46 @@ class AllPortals:
     def update_image(self):
         """add stronghold to graph with the right colours"""
         # graph path from last stronghold as green
-        color = "green"
+        colour = "green"
         try:
+            """
             last_path = self.strongholds.get_last_path()
             print(last_path)
             match last_path:
                 case 0:
-                    color = "green"
+                    colour = "green"
                 case 1:
-                    color = "green"
+                    colour = "green"
                 case 2:
-                    color = "yellow"
-
-            if self.strongholds.get_leave_spawn(-1):
-                color = "purple"
+                    colour = "yellow"
+            """
+            
+            last_path = self.strongholds.completed[-1].get_leave_spawn()
+            match last_path:
+                case 0: 
+                    colour = "green"
+                case 1:
+                    colour = "purple"
+                case 2:
+                    colour = "yellow"
+                case 3:
+                    colour = "yellow"
+            """
+            if self.strongholds.get_leave_spawn_test(-1)==1:
+                colour = "purple"
+            """
         except IndexError:
             pass
 
         if self.strongholds.get_current_location() == self.strongholds.spawn:
-            color = "yellow"
+            colour = "yellow"
 
-        self.graph_point(self.strongholds.get_last_sh_coords(), color)
+        self.graph_point(self.strongholds.get_last_sh_coords(), colour)
 
         if self.strongholds.get_current_location() == self.strongholds.spawn:
             self.graph_line(
                 self.strongholds.get_last_sh_coords(-2),
-                self.strongholds.get_last_location(),
+                self.strongholds.get_last_location(), #setting curr location twice could fix graphing issues cause of this thing
                 "green",
             )
         else:
@@ -443,19 +491,19 @@ class AllPortals:
                 "green",
             )
 
-        color = "blue"
+        colour = "blue"
 
         try:
-            if self.strongholds.get_leave_spawn():
-                color = "purple"
+            if self.strongholds.estimations[self.strongholds.get_completed_count()].get_leave_spawn()==1:
+                colour = "purple"
             else:
-                color = "blue"
+                colour = "blue"
         except IndexError:
             pass
 
         # graph path to next stronghold as blue
         try:
-            self.graph_point(self.strongholds.get_next_sh_coords(), color)
+            self.graph_point(self.strongholds.get_next_sh_coords(), colour)
             self.graph_line(
                 self.strongholds.get_current_location(),
                 self.strongholds.get_next_sh_coords(),
@@ -465,17 +513,17 @@ class AllPortals:
             pass
         plt.draw()
 
-    def graph_point(self, coords, color):
-        plt.scatter(coords[0], coords[1], c=color, s=30)
+    def graph_point(self, coords, colour):
+        plt.scatter(coords[0], coords[1], c=colour, s=30)
         plt.draw()
 
-    def graph_line(self, start, end, color):
+    def graph_line(self, start, end, colour):
         plt.arrow(
             start[0],
             start[1],
             (end[0] - start[0]),
             (end[1] - start[1]),
-            color=color,
+            color=colour,
             width=0.0001,
             head_width=0,
             head_length=0,
@@ -487,70 +535,46 @@ class AllPortals:
         """new options for when next stronghold is in 8th ring"""
 
         #dont show options if its not an 8th ring sh cause for some reason this function is called on every stronghold wow i coded this badly
-        if get_stronghold_ring(self.strongholds.get_next_sh_coords()) != 8:
+        if self.strongholds.next_stronghold().get_ring() != 8:
             return
     
         #means empty sector has already been found and returns before showing the empty sh options
         if self.strongholds.get_empty_sh_index() != 0:
             print("eighth ring stronghold\n")
             return
-        
+
         self.empty_button.config(state="normal") # allow user to select empty sector, only shows up if they havent found it yet
 
         self.strongholds.add_completed_8th_ring() #increments even when its empty, not sure if it causes a bug tho
-        print(self.strongholds.get_completed_in_ring(8))
+        print(self.strongholds.get_completed_8th_ring())
 
         if (
-            self.strongholds.get_completed_in_ring(8) >= 9
+            self.strongholds.get_completed_8th_ring() >= 9
             and self.strongholds.get_empty_sh_index() == 0
         ):
             print("skipping last 8th ring sh")
             self.skip_empty()  # dont make user check last 8th ring sh when you already know its empty
             return
 
-
-        print("prompting empty check")
-        self.inst_label.config(
-            text="8th ring, there could be\nno stronghold",
-            bg=lightblue,
-        )
-
-    def show_spawn(self):
-        """edits gui to tell user when to set spawn/not set spawn"""
-        #i know this code could be way more optimized leave me alone
-
-        if self.strongholds.get_leave_spawn():
-            self.inst_label.config(
-                text="LEAVE YOUR SPAWN AT THE NEXT STRONGHOLD.\nDO NOT BREAK BED AFTER FILLING PORTAL.",
-                bg=spawnpurple,
-            )
-        elif self.strongholds.get_dont_set_spawn_colours() or self.purple: #you should never set spawn after purple gui, but get_dont_set_spawn doesnt know that
-            self.inst_label.config(
-                text="DO NOT SET YOUR SPAWN\nAT THE NEXT STRONGHOLD",
-                bg=spawngreen,
-            )
-            self.purple = False
-
-
     def set_bg_colours(self):
         """colour codes the spawn point things so people dont forget surely they wont forget right suuuuurely"""
-        if self.strongholds.get_leave_spawn():
-            try:
-                self.inst_label.config(text="")
-            except:
-                pass
-            frame = spawnpurple
-            press = presspurple
-            button = buttonpurple
-            self.purple = True
-        elif self.strongholds.get_dont_set_spawn_colours() or self.purple:
-            frame = spawngreen
-            press = pressgreen
-            button = buttongreen
-        else:
-            frame = lightblue
-            press = pressblue
-            button = buttonblue
+        match self.strongholds.next_stronghold().get_leave_spawn():
+            case 0:
+                frame = lightblue
+                press = pressblue
+                button = buttonblue
+            case 1:
+                frame = spawnpurple
+                press = presspurple
+                button = buttonpurple
+            case 2:
+                frame = spawngreen
+                press = pressgreen
+                button = buttongreen
+            case 3:
+                frame = spawngreen
+                press = pressgreen
+                button = buttongreen
         
         #bg=colour
         self.root.config(bg=frame)
@@ -570,41 +594,59 @@ class AllPortals:
         self.newnext_button_frame.config(bg=frame)
         self.empty_button_frame.config(bg=frame)
 
+    def set_inst_label(self):
+        """set the label containing instructions for each sh spawn points"""
+        match self.strongholds.next_stronghold().get_leave_spawn():
+            case 0:
+                if self.strongholds.next_stronghold().is_8th_ring():
+                    write = "8th ring, there could be\nno stronghold"
+                else:
+                    write = ""
+            case 1:
+                write = "LEAVE YOUR SPAWN AT THE NEXT STRONGHOLD.\nDO NOT BREAK BED AFTER FILLING PORTAL."
+            case 2:
+                write = "DO NOT SET YOUR SPAWN\nAT THE NEXT STRONGHOLD"
+            case 3:
+                write = "DO NOT SET YOUR SPAWN\nAT THE NEXT STRONGHOLD"
+        self.inst_label.config(text=write)
+        self.set_bg_colours()
+        return
 
     def display_next_sh(self):
         """edit gui to show new coords and angle"""
+        self.set_inst_label()
         sh_data = self.strongholds.get_next_sh()
         print(
             "Stronghold {0}:\n{1} at angle {2}".format(
                 sh_data[0], sh_data[1], sh_data[3]
             )
         )  # print in case user needs to see previous locations
+        print(f"GET LEAVE SPAWN = {self.strongholds.next_stronghold().get_leave_spawn()}\n\n")
         self.sh_label.config(
             text="Stronghold {0}:\n{1} at angle {2}".format(
                 sh_data[0], sh_data[1], sh_data[3]
             ),
             font=("Cambria", 14),
         )
-        print("NEXT SH DISPLAYED")
 
-    def next_sh(self, last_empty: bool = False):
+    def next_sh(self):
         """completes the last stronghold and finds coords of next one and checks all the 8th ring stuff and optimizations and if its the last sh and whatever, last_empty is true if it is the empty sector"""
-        print("PRESSED NEXT SH")
 
         if self.newnext_button.cget("state") == "disabled": # stops the hotkey from pressing next when button is disabled
             return
 
         # optimization for when last 8th ring is empty
         if self.strongholds.completed_8th_ring == 9 and not self.strongholds.empty_index:
-            for elem in self.strongholds.estimations[self.strongholds.get_completed_count():]: # check strongholds left in estimations for empty sector, elem contains just coords
-                if get_stronghold_ring(elem)==8:
-                    self.complete_sh(elem, True) # puts empty ring as the last completed sh
-                    self.strongholds.empty_index == self.strongholds.get_completed_count() # sets index of empty sector in completed sh array
+            for elem in self.strongholds.estimations[self.strongholds.get_completed_count():]: # check strongholds left in estimations for empty sector, elem contains sh object
+                if elem.get_ring()==8:
+                    elem.set_empty(True)
+                    self.complete_sh(elem) # puts empty ring as the last completed sh
+                    self.strongholds.empty_index = self.strongholds.get_completed_count() # sets index of empty sector in completed sh array
                     self.strongholds.estimations.remove(elem) # gets it out of estimations for the new pathfinding
                     
                     # plot empty sector
                     plt.scatter(
-                        *elem,
+                        *elem.get_coords(),
                         c="red",
                         s=50,
                     )
@@ -637,7 +679,7 @@ class AllPortals:
             try:
                 if (
                     self.strongholds.estimations.index(
-                        self.strongholds.get_next_sh_coords()
+                        self.strongholds.next_stronghold()
                     )
                     != self.strongholds.get_completed_count()
                     + len(self.strongholds.estimations)
@@ -645,7 +687,7 @@ class AllPortals:
                 ):
                     print("done!")
                     return
-                self.complete_sh(self.strongholds.get_next_sh_coords(), last_empty)
+                self.complete_sh(self.strongholds.estimations[self.strongholds.get_completed_count()])
                 self.strongholds.set_current_location(
                     self.strongholds.get_last_sh_coords()
                 )
@@ -670,39 +712,28 @@ class AllPortals:
 
         else:
             print(f"COMPLETED SH {self.strongholds.get_next_sh_coords()}")
-            self.complete_sh(self.strongholds.get_next_sh_coords(), last_empty) # puts empty sector into empty_index in completed array if last_empty==true
+            self.complete_sh(self.strongholds.estimations[self.strongholds.get_completed_count()-8]) # will probably change after empty sector
             self.create_empty_widgets()
             try:
                 self.optimize_next_3_nodes()
             except IndexError:
                 pass #has to be try/except cause this thing gives an error in the gui colour updates idk why man but then if u dont pass the error it makes the second last line blue in the graph
             self.update_image()
-            try:
-                print("leave your spawn behind?", self.strongholds.get_leave_spawn()) # mostly correct but says true when on the sh before last 8th ring when its an empty sector cause at this point it still thinks ur going there
-                print(
-                    "don't set your spawn at all?", self.strongholds.get_dont_set_spawn() #this is always false here for some reason but its correct in optimize_next_3_nodes
-                )
-            except IndexError:
-                pass
             self.display_next_sh()
 
     def optimize_next_3_nodes(self):
         """sets your current location at your current location, which is complicated when you spawn at previous shs or 0 0"""
         self.strongholds.set_current_location(self.strongholds.get_last_sh_coords())
-        self.set_bg_colours()
-        self.show_spawn() # bg colours and show spawn have to be here cause of the weird errors with get_leave_spawn and get_dont_set_spawn please dont move these
         if self.pathfind_pressed:
             self.strongholds.set_current_location(self.pos)
             self.pathfind_pressed=False
             return
-        if self.strongholds.get_last_path() == 2: # spawn was left behind
+        if self.strongholds.last_stronghold().get_leave_spawn() == 2: # spawn was left behind
             self.strongholds.set_current_location(
                 self.strongholds.get_last_sh_coords(-2) #sets location at 2nd last sh coords which is where your spawn was left i think
             )
-        if self.strongholds.get_dont_set_spawn():
+        if self.strongholds.last_stronghold().get_leave_spawn()==3:
             self.strongholds.set_current_location(self.strongholds.spawn) # sets location at spawn when it was optimal
-            print("leave ur spawn behind at the next portal")
-        print(get_nether_coords(self.strongholds.get_current_location()))
 
     def empty(self):
         """tells the program you have found the empty sector, runs when empty button is pressed. graphs empty sector as red"""
@@ -710,7 +741,7 @@ class AllPortals:
         self.empty_button.config(state="disabled")
         self.inst_label.config(text="")
 
-        self.next_sh(True)
+        self.strongholds.next_stronghold().set_empty(True)
         # plot empty sh point
         try:
             self.point = plt.scatter(
@@ -742,13 +773,10 @@ class AllPortals:
             print("photo broken", e) # this was from some weird thing i edited in mimes code i couldnt figure out why this would ever raise an exception or what it means if it does
             pass
 
-        #self.complete_sh(self.strongholds.get_next_sh_coords(), True)
-
-        
         # add empty sector to estimations??? for some reason??? also why cant it just use append
         # nevermind it breaks without this
         self.strongholds.estimations.insert(
-            len(self.strongholds.estimations), self.strongholds.get_next_sh_coords()
+            len(self.strongholds.estimations), self.strongholds.next_stronghold()
         )
     
 
@@ -761,7 +789,7 @@ class AllPortals:
                 message="Have you filled in the portal at the stronghold currently listed?"
             )
             if msg:
-                self.complete_sh(self.strongholds.get_next_sh_coords(), False) #setting this to 'False' could theoretically cause a bug if the user does this on the empty 8th ring sh before pressing 'empty'... but that wouldnt happen probably... surely...
+                self.complete_sh(Stronghold(self.strongholds.get_next_sh_coords(), get_stronghold_ring(self.strongholds.get_next_sh_coords()))) #setting 'empty'to 'False' could theoretically cause a bug if the user does this on the empty 8th ring sh before pressing 'empty'... but that wouldnt happen probably... surely...
                 self.update_image()
 
             new_coords = tk.simpledialog.askstring(
@@ -789,7 +817,7 @@ class AllPortals:
             self.pathfind_pressed = True
 
         else:
-            self.pos = self.strongholds.get_next_sh_coords() # has to be next cause of where this program is run before this sh is added to completed_shs list
+            self.pos = self.strongholds.get_next_sh_coords() # has to be next cause of where this function is run before this sh is added to completed_shs list
             self.pathfind_pressed = True
             self.get_new_path()
 
@@ -803,9 +831,7 @@ class AllPortals:
         self.inst_label.config(text="")
 
         reverse_ests = self.strongholds.estimations[self.strongholds.get_completed_count()-8:] # for some reason this makes it backwards so we gotta reverse it
-        print(f"ADDING LENGTHS OF ARRAYS: {len(reverse_ests) + self.strongholds.get_completed_count()}")
         unfinished_ests = reverse_ests[::-1] # using the reverse method didnt work dont ask idk
-        print(unfinished_ests)
         copied_estimations = self.strongholds.estimations.copy()
 
         #get new path
@@ -813,23 +839,16 @@ class AllPortals:
             self.pos, unfinished_ests
         )
         #CHANGE AFTER TESTING
-        sorted_estimations = sort_estimations_order_by_path(read_path_qs_file_test(), unfinished_ests) #THIS GOES TO THE SORT_ESTIMATIONS IN UTILS ITS CONFUSING I KNOW IM SORRY
+        sorted_estimations = sort_estimations_order_by_path(read_path_qs_file_test(), unfinished_ests, self.strongholds.spawn) #THIS GOES TO THE SORT_ESTIMATIONS IN UTILS ITS CONFUSING I KNOW IM SORRY
         #ok that thing returns the sorted and optimized path for just the strongholds we havent been to yet
         #now we gotta put them back into strongholds.estimations by overwriting whats already there
         j=0
-        print("LENGTHS")
-        print(self.strongholds.get_completed_count())
-        print(len(self.strongholds.estimations))
-        print(len(sorted_estimations))
         for i in range(self.strongholds.get_completed_count()-8, len(self.strongholds.estimations)):
             self.strongholds.estimations[i] = sorted_estimations[j]
             j += 1
 
-        print("\n\n\nEQUAL LENGTH???")
-        print(len(self.strongholds.estimations)==len(copied_estimations))
         for i in range(len(self.strongholds.estimations)):
-            print(copied_estimations[i], self.strongholds.estimations[i], copied_estimations[i]==self.strongholds.estimations[i])
-        print("\n\n\n")
+            print(copied_estimations[i].get_coords(), self.strongholds.estimations[i].get_coords(), copied_estimations[i]==self.strongholds.estimations[i])
 
         self.create_empty_widgets()
         try:

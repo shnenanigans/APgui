@@ -5,6 +5,7 @@ import os
 import re
 from datetime import datetime
 from tkinter import messagebox
+import tkinter as tk
 
 import constants
 
@@ -27,7 +28,7 @@ def write_nodes_qs_file(pos: tuple, estimations: list):
         )
         # write all the estimations to the qs file as nodes
         qs_file.writelines(
-            ["{0} {1}\n".format(estimate[0], estimate[1]) for estimate in estimations]
+            ["{0} {1}\n".format(estimate.get_coords()[0], estimate.get_coords()[1]) for estimate in estimations]
         )
 
 
@@ -54,8 +55,34 @@ def read_path_qs_file():
                 title=None,
                 message="Open the strongholds.qs file in this directory with concorde, press solve in the top left, solve it, save it, then press OK.",
             )
-
+                
             with open("strongholds.qs", "r") as qs_file:
+                lines = qs_file.readlines()
+
+            path = {}
+            for i in range(int(lines[0].split()[0]) + 1, len(lines)):
+                start, next_node, dist = lines[i].split()
+                path[int(start)] = int(next_node)
+
+            return path
+        except Exception as e:
+            print(e)
+            messagebox.showerror(
+                title=None,
+                message="Make sure to solve and save the strongholds.qs file before pressing OK.",
+            )
+            continue
+
+def read_path_qs_file_test():
+    """DELETE AFTER TESTING"""
+    while True:
+        try:
+            messagebox.showinfo(
+                title=None,
+                message="Open the strongholds.qs file in this directory with concorde, press solve in the top left, solve it, save it, then press OK.",
+            )
+
+            with open("strongholds-emptysectorrepathfind.qs", "r") as qs_file:
                 lines = qs_file.readlines()
 
             path = {}
@@ -203,36 +230,37 @@ def get_key_string(key):
         return str(key).replace("Key.", "")
 
 
-def sort_estimations_order_by_path(path: dict, estimations: list) -> None:
+def sort_estimations_order_by_path(path: dict, estimations: list, spawn: tuple) -> list:
     """takes concord stuff and sorts estimations according to the path it gives, returns sorted array"""
     sorted_estimations = []
-    print(len(estimations))
     for destination in path.values(): # see qs file for path values, its the second number starting from where it starts giving you rows of 3 numbers
         if destination < 1: # last path value is always 0, you've reached the end
             continue
-        print(destination - 1)
-        print(estimations[destination - 1])
         sorted_estimations.append(estimations[destination - 1]) # adds the next sh in optimal path to sorted_estimations
-        print(len(sorted_estimations))
-    print(sorted_estimations)
-    print(path)
-    return optimize_spawnpoint_abuse(sorted_estimations)
+    return optimize_spawnpoint_abuse(sorted_estimations, spawn)
 
 
-def optimize_spawnpoint_abuse(estimations) -> None:
+def optimize_spawnpoint_abuse(estimations: list, spawn: tuple) -> list:
     """if sh 2nd in the future (2) is closer to current one (0) than the next one (1) is, swap 2 and 1 in the estimations array. You will go from 0 -> 2, leave spawn, 2 -> 1, then continue from 2."""
     sorted_estimations = estimations.copy()
     i = 0
     while i < len(estimations):
         try:
             if get_distance(
-                estimations[i], estimations[i + 2]
-            ) < get_distance(estimations[i], estimations[i + 1]):
+                estimations[i].get_coords(), estimations[i + 2].get_coords()
+            ) < get_distance(estimations[i].get_coords(), estimations[i + 1].get_coords()):
                 print("swap made between", i + 10, i + 11) #this print statement is definitely very wrong here and i dont feel like figuring out the math to make it right
                 sorted_estimations[i + 1], sorted_estimations[i + 2] = (
                     estimations[i + 2],
                     estimations[i + 1],
                 )
+                sorted_estimations[i+1].set_leave_spawn(1) # leave spawn
+                sorted_estimations[i+2].set_leave_spawn(2) # dont set spawn
+
+                if sorted_estimations[i].get_ring()==1:
+                    if get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+1].get_coords()) > get_distance((spawn), sorted_estimations[i+1].get_coords()):
+                        sorted_estimations[i].set_leave_spawn(3) # dont set spawn if spawn is closer to next sh than your current sh
+
         except IndexError:
             return sorted_estimations
         i += 1

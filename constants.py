@@ -1,4 +1,4 @@
-# how many strongholds are in each generation ring
+# how many stronghold are in each generation ring
 strongholds_per_ring = [3, 6, 10, 15, 21, 28, 36, 10]
 
 # the average distance of a stronghold in (index+1) ring
