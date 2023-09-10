@@ -34,7 +34,8 @@ leave spawn happens twice surely this gets fixed with new pathfinding
 FIX X IN COORDS BOX FOR REPATHFINDING
 completedcount-8 is wrong after empty sector probably
 pathfinding despairge
-empty button stays empty
+line from empty sector to next sh because leave spawn wouldnt work
+make hotkey pause not just return
 """
 
 class AllPortals:
@@ -441,35 +442,21 @@ class AllPortals:
 
     def update_image(self):
         """add stronghold to graph with the right colours"""
-        # graph path from last stronghold as green
-        colour = "green"
-        try:
-            """
-            last_path = self.strongholds.get_last_path()
-            print(last_path)
-            match last_path:
-                case 0:
-                    colour = "green"
-                case 1:
-                    colour = "green"
-                case 2:
-                    colour = "yellow"
-            """
-            
+        try: #last_path is dot placed on last sh
             last_path = self.strongholds.completed[-1].get_leave_spawn()
             match last_path:
                 case 0: 
+                    print("GREEN")
                     colour = "green"
                 case 1:
+                    print("PURPLE")
                     colour = "purple"
                 case 2:
+                    print("YELLOW")
                     colour = "yellow"
                 case 3:
+                    print("YELLOW")
                     colour = "yellow"
-            """
-            if self.strongholds.get_leave_spawn_test(-1)==1:
-                colour = "purple"
-            """
         except IndexError:
             pass
 
@@ -491,17 +478,20 @@ class AllPortals:
                 "green",
             )
 
-        colour = "blue"
-
-        try:
-            if self.strongholds.estimations[self.strongholds.get_completed_count()].get_leave_spawn()==1:
-                colour = "purple"
-            else:
-                colour = "blue"
+        try: #set colour of point on next sh
+            match self.strongholds.next_stronghold().get_leave_spawn():
+                case 0:
+                    colour = "blue"
+                case 1:
+                    colour = "purple"
+                case 2:
+                    colour = "yellow"
+                case 3:
+                    colour = "yellow"
         except IndexError:
             pass
 
-        # graph path to next stronghold as blue
+        # line to next sh always blue, dot colour set above
         try:
             self.graph_point(self.strongholds.get_next_sh_coords(), colour)
             self.graph_line(
@@ -509,6 +499,7 @@ class AllPortals:
                 self.strongholds.get_next_sh_coords(),
                 "blue",
             )
+            print(f"graph point: {colour}, line: blue")
         except IndexError as e:
             pass
         plt.draw()
@@ -530,31 +521,6 @@ class AllPortals:
             length_includes_head=True,
         )
         plt.draw()
-
-    def create_empty_widgets(self):
-        """new options for when next stronghold is in 8th ring"""
-
-        #dont show options if its not an 8th ring sh cause for some reason this function is called on every stronghold wow i coded this badly
-        if self.strongholds.next_stronghold().get_ring() != 8:
-            return
-    
-        #means empty sector has already been found and returns before showing the empty sh options
-        if self.strongholds.get_empty_sh_index() != 0:
-            print("eighth ring stronghold\n")
-            return
-
-        self.empty_button.config(state="normal") # allow user to select empty sector, only shows up if they havent found it yet
-
-        self.strongholds.add_completed_8th_ring() #increments even when its empty, not sure if it causes a bug tho
-        print(self.strongholds.get_completed_8th_ring())
-
-        if (
-            self.strongholds.get_completed_8th_ring() >= 9
-            and self.strongholds.get_empty_sh_index() == 0
-        ):
-            print("skipping last 8th ring sh")
-            self.skip_empty()  # dont make user check last 8th ring sh when you already know its empty
-            return
 
     def set_bg_colours(self):
         """colour codes the spawn point things so people dont forget surely they wont forget right suuuuurely"""
@@ -635,29 +601,27 @@ class AllPortals:
         if self.newnext_button.cget("state") == "disabled": # stops the hotkey from pressing next when button is disabled
             return
 
+        if self.strongholds.next_stronghold().is_8th_ring():
+            self.strongholds.add_completed_8th_ring()
+
         # optimization for when last 8th ring is empty
+        print(f"HERE {self.strongholds.completed_8th_ring}, {self.strongholds.empty_index}")
         if self.strongholds.completed_8th_ring == 9 and not self.strongholds.empty_index:
-            for elem in self.strongholds.estimations[self.strongholds.get_completed_count():]: # check strongholds left in estimations for empty sector, elem contains sh object
+            for elem in self.strongholds.estimations[self.strongholds.get_completed_count()+1:]: # check strongholds left in estimations for empty sector, elem contains sh object
                 if elem.get_ring()==8:
                     elem.set_empty(True)
                     self.complete_sh(elem) # puts empty ring as the last completed sh
-                    self.strongholds.empty_index = self.strongholds.get_completed_count() # sets index of empty sector in completed sh array
+                    self.strongholds.empty_index = self.strongholds.get_completed_count()-1 # sets index of empty sector in completed sh array
                     self.strongholds.estimations.remove(elem) # gets it out of estimations for the new pathfinding
-                    
-                    # plot empty sector
-                    plt.scatter(
-                        *elem.get_coords(),
-                        c="red",
-                        s=50,
-                    )
-                    plt.draw()
-
+                    self.graph_point(elem.get_coords(), "red")
+            self.strongholds.add_completed_8th_ring()
             self.find_from_coords(True)
             return
-
         
-        self.inst_label.config(text="")
-        self.empty_button.config(state="disabled")
+        if self.strongholds.next_stronghold().is_8th_ring() and not self.strongholds.empty_index:
+            self.empty_button.config(state="normal")
+        else:
+            self.empty_button.config(state="disabled")
 
         # very important, fix place/grid stuff later
         if self.done:
@@ -713,7 +677,6 @@ class AllPortals:
         else:
             print(f"COMPLETED SH {self.strongholds.get_next_sh_coords()}")
             self.complete_sh(self.strongholds.estimations[self.strongholds.get_completed_count()-8]) # will probably change after empty sector
-            self.create_empty_widgets()
             try:
                 self.optimize_next_3_nodes()
             except IndexError:
@@ -723,6 +686,7 @@ class AllPortals:
 
     def optimize_next_3_nodes(self):
         """sets your current location at your current location, which is complicated when you spawn at previous shs or 0 0"""
+        #last sh is usually current location since this runs after sh is completed
         self.strongholds.set_current_location(self.strongholds.get_last_sh_coords())
         if self.pathfind_pressed:
             self.strongholds.set_current_location(self.pos)
@@ -739,46 +703,10 @@ class AllPortals:
         """tells the program you have found the empty sector, runs when empty button is pressed. graphs empty sector as red"""
         print("empty sector\n")
         self.empty_button.config(state="disabled")
-        self.inst_label.config(text="")
-
         self.strongholds.next_stronghold().set_empty(True)
-        # plot empty sh point
-        try:
-            self.point = plt.scatter(
-                self.strongholds.get_last_sh_coords()[0],
-                self.strongholds.get_last_sh_coords()[1],
-                c="red",
-                s=50,
-            )
-            plt.draw()
-        except Exception as e:
-            print("photo broken", e)
-            pass
-
-    def skip_empty(self):
-        """skips empty sector in the rare case you find all 9 and this is the last place to check but you already know its empty. graphs empty sector as red"""
-        print("empty sector\n")
-        self.empty_button.config(state="disabled")
-        self.inst_label.config(text="")
-
-        # plot empty sh point
-        try:
-            self.point = plt.scatter(
-                *self.strongholds.get_next_sh_coords(),
-                c="red",
-                s=50,
-            )
-            plt.draw()
-        except Exception as e:
-            print("photo broken", e) # this was from some weird thing i edited in mimes code i couldnt figure out why this would ever raise an exception or what it means if it does
-            pass
-
-        # add empty sector to estimations??? for some reason??? also why cant it just use append
-        # nevermind it breaks without this
-        self.strongholds.estimations.insert(
-            len(self.strongholds.estimations), self.strongholds.next_stronghold()
-        )
-    
+        self.strongholds.empty_index = self.strongholds.get_completed_count()
+        self.graph_point(self.strongholds.get_next_sh_coords(), "red")
+        self.strongholds.add_completed_8th_ring()
 
     def find_from_coords(self, auto: bool=False):
         """sets current location. Auto is false when user presses the button, true when program finds 8th ring optimization on its own"""
@@ -817,7 +745,10 @@ class AllPortals:
             self.pathfind_pressed = True
 
         else:
-            self.pos = self.strongholds.get_next_sh_coords() # has to be next cause of where this function is run before this sh is added to completed_shs list
+            if self.strongholds.next_stronghold().get_leave_spawn()==2:
+                self.pos = self.strongholds.get_last_sh_coords() #7th ring sh where spawn was left
+            else:
+                self.pos = self.strongholds.get_next_sh_coords() #8th ring if spawn was not left
             self.pathfind_pressed = True
             self.get_new_path()
 
@@ -827,10 +758,8 @@ class AllPortals:
     def get_new_path(self):
         """redoes pathfinding with only the strongholds left and a new current location"""
         print("GET NEW PATH")
-        self.empty_button.config(state="disabled")
-        self.inst_label.config(text="")
-
-        reverse_ests = self.strongholds.estimations[self.strongholds.get_completed_count()-8:] # for some reason this makes it backwards so we gotta reverse it
+        #ests never contains empty sh, it will be in completed array
+        reverse_ests = self.strongholds.estimations[self.strongholds.get_completed_count() - 8:] # for some reason this makes it backwards so we gotta reverse it
         unfinished_ests = reverse_ests[::-1] # using the reverse method didnt work dont ask idk
         copied_estimations = self.strongholds.estimations.copy()
 
@@ -838,8 +767,8 @@ class AllPortals:
         write_nodes_qs_file(
             self.pos, unfinished_ests
         )
-        #CHANGE AFTER TESTING
-        sorted_estimations = sort_estimations_order_by_path(read_path_qs_file_test(), unfinished_ests, self.strongholds.spawn) #THIS GOES TO THE SORT_ESTIMATIONS IN UTILS ITS CONFUSING I KNOW IM SORRY
+
+        sorted_estimations = sort_estimations_order_by_path(read_path_qs_file(), unfinished_ests, self.strongholds.spawn) #THIS GOES TO THE SORT_ESTIMATIONS IN UTILS ITS CONFUSING I KNOW IM SORRY
         #ok that thing returns the sorted and optimized path for just the strongholds we havent been to yet
         #now we gotta put them back into strongholds.estimations by overwriting whats already there
         j=0
@@ -850,13 +779,12 @@ class AllPortals:
         for i in range(len(self.strongholds.estimations)):
             print(copied_estimations[i].get_coords(), self.strongholds.estimations[i].get_coords(), copied_estimations[i]==self.strongholds.estimations[i])
 
-        self.create_empty_widgets()
         try:
             self.optimize_next_3_nodes()
         except IndexError:
             pass
-        self.update_image()
-        self.display_next_sh()
+        #self.update_image()
+        #self.display_next_sh()
         print("DONE GET NEW PATH")
         self.newnext_button.config(state="normal")
 

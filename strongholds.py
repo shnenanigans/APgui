@@ -6,38 +6,47 @@ from utils import get_stronghold_ring, get_distance, get_mc_angle, get_nether_co
 import constants
 from utils import *
 
+
 class Stronghold:
-    def __init__(self, coords: tuple, ring: int, leave_spawn: int=0, empty_sector: bool=False):
+    def __init__(self, coords: tuple, ring: int, leave_spawn: int = 0, empty_sector: bool = False):
         """constructor for stronghold class"""
         self.coords = coords
         self.leave_spawn = leave_spawn
         self.empty_sector = empty_sector
         self.ring = ring
-    
+
     def get_coords(self) -> tuple:
         """return coords of sh"""
         return self.coords
+
     def get_leave_spawn(self) -> int:
         """return where to set spawn. 0=normal, 1=leave spawn, 2=no spawn, 3=spawn at origin"""
         return self.leave_spawn
+
     def set_coords(self, coords: tuple):
         """set coords of sh"""
         self.coords = coords
+
     def set_leave_spawn(self, leave_spawn: int):
         """set where to set spawn"""
         self.leave_spawn = leave_spawn
+
     def is_8th_ring(self) -> bool:
         """tell user if sh is in the 8th ring or not"""
-        return self.ring==8
+        return self.ring == 8
+
     def set_empty(self, empty: bool):
         """sets sh as empty sector"""
         self.empty_sector = empty
+
     def is_empty_sector(self) -> bool:
         """returns whether this location is the empty sector or not"""
         return self.empty_sector
+
     def get_ring(self):
         """returns sh ring"""
         return self.ring
+
 
 class Strongholds():
     def __init__(self) -> None:
@@ -61,10 +70,10 @@ class Strongholds():
         self.last_location = (0, 0)
         self.empty_index = 0
         self.completed_8th_ring = 1
-    
+
     def add_completed_8th_ring(self):
         """adds 1 to completed 8th ring shs"""
-        self.completed_8th_ring +=1 
+        self.completed_8th_ring += 1
 
     def get_completed_8th_ring(self) -> int:
         """returns the number of shs found in 8th ring because i dont want to run completed_in_ring on every sh that sounds bad for efficiency"""
@@ -116,7 +125,7 @@ class Strongholds():
 
     def get_finished(self) -> bool:
         """true if portals are all filled"""
-        #apparently you can add ints and bools??? empty_index==0 when empty sector has not been found and adds 1 to completed count. if it has been found then completed count is normal cause empty sector location is added to completed array somewhere else
+        # apparently you can add ints and bools??? empty_index==0 when empty sector has not been found and adds 1 to completed count. if it has been found then completed count is normal cause empty sector location is added to completed array somewhere else
         return self.get_completed_count() + (self.empty_index == 0) >= 128
 
     def get_completed_count(self) -> int:
@@ -145,14 +154,15 @@ class Strongholds():
                 get_nether_coords(self.get_current_location()),
                 next_n_coords,
             ),
-            get_mc_angle(self.get_current_location(), self.get_next_sh_coords()),
+            get_mc_angle(self.get_current_location(),
+                         self.get_next_sh_coords()),
         )
-    
-    def next_stronghold(self, count: int=1) -> Stronghold:
+
+    def next_stronghold(self, count: int = 1) -> Stronghold:
         """return next sh as sh object, count is optional argument for future shs (default 1)"""
         return self.estimations[self.get_completed_count() + len(self.estimations) - 129 + (count - 1)]
-    
-    def last_stronghold(self, count: int=-1) -> Stronghold:
+
+    def last_stronghold(self, count: int = -1) -> Stronghold:
         """return last sh as sh object, count is optional argument for further past shs (default -1)"""
         return self.completed[count]
 
@@ -163,7 +173,8 @@ class Strongholds():
         # because already completed strongholds (usually the first 8) are already completed counted by get_completed_count
         # the entire thing is then offset by an optional argument so that u can get the coords for strongholds farther in the future
         return self.estimations[
-            self.get_completed_count() + len(self.estimations) - 129 + (count - 1) #estimations is always 121 so really it should be len(completed) - 8 + (count-1)
+            # estimations is always 121 so really it should be len(completed) - 8 + (count-1)
+            self.get_completed_count() + len(self.estimations) - 129 + (count - 1)
         ].get_coords()
 
     def get_last_sh_coords(self, count: int = -1) -> tuple:
@@ -179,12 +190,18 @@ class Strongholds():
         # 1 = skip and leave spawn
         # 2 = leave spawn behind
         distances = [
-            get_distance(self.get_last_sh_coords(1), self.get_next_sh_coords(2))
-            + get_distance(self.get_next_sh_coords(2), self.get_next_sh_coords(3)),
-            get_distance(self.get_next_sh_coords(2), self.get_next_sh_coords(3))
-            + get_distance(self.get_next_sh_coords(3), self.get_last_sh_coords(1)),
-            get_distance(self.get_next_sh_coords(3), self.get_last_sh_coords(1))
-            + get_distance(self.get_last_sh_coords(1), self.get_next_sh_coords(2)),
+            get_distance(self.get_last_sh_coords(1),
+                         self.get_next_sh_coords(2))
+            + get_distance(self.get_next_sh_coords(2),
+                           self.get_next_sh_coords(3)),
+            get_distance(self.get_next_sh_coords(2),
+                         self.get_next_sh_coords(3))
+            + get_distance(self.get_next_sh_coords(3),
+                           self.get_last_sh_coords(1)),
+            get_distance(self.get_next_sh_coords(3),
+                         self.get_last_sh_coords(1))
+            + get_distance(self.get_last_sh_coords(1),
+                           self.get_next_sh_coords(2)),
         ]
         return distances.index(min(distances))
 
@@ -193,23 +210,31 @@ class Strongholds():
         # 0 = default path
         # 1 = skipped and left spawn
         # 2 = left spawn behind
-        #i asked mach what the difference between 'skipped and left spawn' and 'left spawn behind' was and she said technically nothing anymore so do with that information what you will
+        # i asked mach what the difference between 'skipped and left spawn' and 'left spawn behind' was and she said technically nothing anymore so do with that information what you will
         distances = [
-            get_distance(self.get_last_sh_coords(-2), self.get_last_sh_coords(-1))
-            + get_distance(self.get_last_sh_coords(-1), self.get_next_sh_coords(1)),
-            get_distance(self.get_last_sh_coords(-1), self.get_next_sh_coords(1))
-            + get_distance(self.get_next_sh_coords(1), self.get_last_sh_coords(-2)),
-            get_distance(self.get_next_sh_coords(1), self.get_last_sh_coords(-2))
-            + get_distance(self.get_last_sh_coords(-2), self.get_last_sh_coords(-1)),
+            get_distance(self.get_last_sh_coords(-2),
+                         self.get_last_sh_coords(-1))
+            + get_distance(self.get_last_sh_coords(-1),
+                           self.get_next_sh_coords(1)),
+            get_distance(self.get_last_sh_coords(-1),
+                         self.get_next_sh_coords(1))
+            + get_distance(self.get_next_sh_coords(1),
+                           self.get_last_sh_coords(-2)),
+            get_distance(self.get_next_sh_coords(
+                1), self.get_last_sh_coords(-2))
+            + get_distance(self.get_last_sh_coords(-2),
+                           self.get_last_sh_coords(-1)),
         ]
         return distances.index(min(distances))
 
     def get_leave_spawn(self, adjust: int = 0) -> bool:
         """returns true if you leave your spawn point behind, get_leave_spawn(-1) to see if you left your spawn behind 1 stronghold ago and so on (used in update_image)"""
         return get_distance(
-            self.get_next_sh_coords(2 + adjust), self.get_next_sh_coords(3 + adjust)
+            self.get_next_sh_coords(
+                2 + adjust), self.get_next_sh_coords(3 + adjust)
         ) > get_distance(
-            self.get_next_sh_coords(1 + adjust), self.get_next_sh_coords(3 + adjust)
+            self.get_next_sh_coords(
+                1 + adjust), self.get_next_sh_coords(3 + adjust)
         )
 
     def get_dont_set_spawn(self, adjust: int = 0) -> bool:
@@ -217,21 +242,23 @@ class Strongholds():
         return get_distance(
             self.get_current_location(), self.get_next_sh_coords(1 + adjust)
         ) > get_distance((self.spawn), self.get_next_sh_coords(1 + adjust))
-    
+
     def get_leave_spawn_test(self, adjust: int = 0) -> int:
         """says if spawn is left behind (1), not set at all (2), or set normally (0)"""
         if get_distance(
-            self.get_next_sh_coords(2 + adjust), self.get_next_sh_coords(3 + adjust)
+            self.get_next_sh_coords(
+                2 + adjust), self.get_next_sh_coords(3 + adjust)
         ) > get_distance(
-            self.get_next_sh_coords(1 + adjust), self.get_next_sh_coords(3 + adjust)
+            self.get_next_sh_coords(
+                1 + adjust), self.get_next_sh_coords(3 + adjust)
         ):
-            return 1 #leave spawn
+            return 1  # leave spawn
         if get_distance(
             self.get_current_location(), self.get_next_sh_coords(1 + adjust)
         ) > get_distance((self.spawn), self.get_next_sh_coords(1 + adjust)):
-            return 2 #dont set spawn
+            return 2  # dont set spawn
         else:
-            return 0 #set normally
+            return 0  # set normally
 
     def skip_and_go_back(self) -> bool:
         """this is never used idk man but looks like it compares current location with next 2 strongholds and returns true if next one is closer"""
@@ -252,37 +279,28 @@ class Strongholds():
                     angle += (2 * np.pi) / strongholds
                     estimate_x = magnitude * np.cos(angle)
                     estimate_z = magnitude * np.sin(angle)
-                    add_sh = Stronghold((round(estimate_x), round(estimate_z)), ring+1) #make coords into sh object
-                    self.estimations.append(add_sh) #estimations should have only sh objects
+                    # make coords into sh object
+                    add_sh = Stronghold(
+                        (round(estimate_x), round(estimate_z)), ring+1)
+                    # estimations should have only sh objects
+                    self.estimations.append(add_sh)
                     print(round(estimate_x), round(estimate_z), ring)
                 break
 
     def sort_estimations_order_by_path(self, path: dict) -> None:
         """takes concord stuff and sorts estimations according to the path it gives"""
         sorted_estimations = []
-        for destination in path.values(): # see qs file for path values, its the second number starting from where it starts giving you rows of 3 numbers
-            if destination < 1: # last path value is always 0, you've reached the end
+        for destination in path.values():  # see qs file for path values, its the second number starting from where it starts giving you rows of 3 numbers
+            if destination < 1:  # last path value is always 0, you've reached the end
                 continue
-            sorted_estimations.append(self.estimations[destination - 1]) # adds the next sh in optimal path to sorted_estimations
+            # adds the next sh in optimal path to sorted_estimations
+            sorted_estimations.append(self.estimations[destination - 1])
         self.estimations = sorted_estimations
         self.optimize_spawnpoint_abuse()
 
     def optimize_spawnpoint_abuse(self) -> None:
         """if sh 2nd in the future (2) is closer to current one (0) than the next one (1) is, swap 2 and 1 in the estimations array. You will go from (before swapping) 0 -> 2, leave spawn, 2 -> 1, then continue from 2."""
         sorted_estimations = self.estimations.copy()
-
-        for i in range(len(sorted_estimations)):
-            try:
-                if sorted_estimations[i].get_ring()==1:
-                    if get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+1].get_coords()) > get_distance((self.spawn), sorted_estimations[i+1].get_coords()):
-                        sorted_estimations[i].set_leave_spawn(3) # dont set spawn if spawn is closer to next sh than your current sh
-
-                if get_distance(
-                sorted_estimations[i+1].get_coords(), sorted_estimations[i+2].get_coords()) > get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+2].get_coords()):
-                    sorted_estimations[i].set_leave_spawn(1)
-                    sorted_estimations[i+1].set_leave_spawn(2)
-            except IndexError:
-                break
 
         temp = []
         for elem in sorted_estimations:
@@ -292,22 +310,33 @@ class Strongholds():
         while i < len(self.estimations):
             try:
                 if get_distance(
-                    self.estimations[i].get_coords(), self.estimations[i + 2].get_coords()
+                    self.estimations[i].get_coords(
+                    ), self.estimations[i + 2].get_coords()
                 ) < get_distance(self.estimations[i].get_coords(), self.estimations[i + 1].get_coords()):
                     print("swap made between", i + 10, i + 11)
                     sorted_estimations[i + 1], sorted_estimations[i + 2] = (
                         self.estimations[i + 2],
                         self.estimations[i + 1],
                     )
-                    sorted_estimations[i+1].set_leave_spawn(1) # leave spawn
-                    sorted_estimations[i+2].set_leave_spawn(2) # dont set spawn
 
             except IndexError:
                 break
             i += 1
-        
-        for i in range(len(temp)):
-            print(temp[i], sorted_estimations[i].get_leave_spawn(), temp[i] == sorted_estimations[i].get_leave_spawn()) #this is still extremely broken
-        
-        self.estimations = sorted_estimations
 
+        for i in range(len(sorted_estimations)):
+            try:
+                if get_distance(
+                        sorted_estimations[i+1].get_coords(), sorted_estimations[i+2].get_coords()) > get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+2].get_coords()):
+                    sorted_estimations[i].set_leave_spawn(1) #leave spawn
+                    sorted_estimations[i+1].set_leave_spawn(2) #dont set spawn
+
+                if get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+1].get_coords()) > get_distance((self.spawn), sorted_estimations[i+1].get_coords()):
+                    sorted_estimations[i].set_leave_spawn(3) # dont set spawn if next sh is closer to spawn than your current sh
+            except IndexError:
+                break
+
+        for i in range(len(temp)):
+            print(temp[i], sorted_estimations[i].get_leave_spawn(), temp[i] ==
+                  sorted_estimations[i].get_leave_spawn())
+
+        self.estimations = sorted_estimations

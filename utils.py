@@ -73,32 +73,6 @@ def read_path_qs_file():
             )
             continue
 
-def read_path_qs_file_test():
-    """DELETE AFTER TESTING"""
-    while True:
-        try:
-            messagebox.showinfo(
-                title=None,
-                message="Open the strongholds.qs file in this directory with concorde, press solve in the top left, solve it, save it, then press OK.",
-            )
-
-            with open("strongholds-emptysectorrepathfind.qs", "r") as qs_file:
-                lines = qs_file.readlines()
-
-            path = {}
-            for i in range(int(lines[0].split()[0]) + 1, len(lines)):
-                start, next_node, dist = lines[i].split()
-                path[int(start)] = int(next_node)
-
-            return path
-        except Exception as e:
-            print(e)
-            messagebox.showerror(
-                title=None,
-                message="Make sure to solve and save the strongholds.qs file before pressing OK.",
-            )
-            continue
-
 
 def get_distance(x1, x2):
     """find distance between x1 and x2"""
@@ -241,26 +215,45 @@ def sort_estimations_order_by_path(path: dict, estimations: list, spawn: tuple) 
 
 
 def optimize_spawnpoint_abuse(estimations: list, spawn: tuple) -> list:
-    """if sh 2nd in the future (2) is closer to current one (0) than the next one (1) is, swap 2 and 1 in the estimations array. You will go from 0 -> 2, leave spawn, 2 -> 1, then continue from 2."""
-    sorted_estimations = estimations.copy()
-    i = 0
-    while i < len(estimations):
-        try:
-            if get_distance(
-                estimations[i].get_coords(), estimations[i + 2].get_coords()
-            ) < get_distance(estimations[i].get_coords(), estimations[i + 1].get_coords()):
-                print("swap made between", i + 10, i + 11) #this print statement is definitely very wrong here and i dont feel like figuring out the math to make it right
-                sorted_estimations[i + 1], sorted_estimations[i + 2] = (
-                    estimations[i + 2],
-                    estimations[i + 1],
-                )
-                sorted_estimations[i+1].set_leave_spawn(1) # leave spawn
-                sorted_estimations[i+2].set_leave_spawn(2) # dont set spawn
+        """if sh 2nd in the future (2) is closer to current one (0) than the next one (1) is, swap 2 and 1 in the estimations array. You will go from (before swapping) 0 -> 2, leave spawn, 2 -> 1, then continue from 2."""
+        sorted_estimations = estimations.copy()
 
-                if sorted_estimations[i].get_ring()==1:
-                    if get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+1].get_coords()) > get_distance((spawn), sorted_estimations[i+1].get_coords()):
-                        sorted_estimations[i].set_leave_spawn(3) # dont set spawn if spawn is closer to next sh than your current sh
+        temp = []
+        for elem in sorted_estimations:
+            temp.append(elem.get_leave_spawn())
 
-        except IndexError:
-            return sorted_estimations
-        i += 1
+        i = 0
+        while i < len(estimations):
+            try:
+                if get_distance(
+                    estimations[i].get_coords(
+                    ), estimations[i + 2].get_coords()
+                ) < get_distance(estimations[i].get_coords(), estimations[i + 1].get_coords()):
+                    print("swap made between", i + 10, i + 11)
+                    sorted_estimations[i + 1], sorted_estimations[i + 2] = (
+                        estimations[i + 2],
+                        estimations[i + 1],
+                    )
+
+            except IndexError:
+                break
+            i += 1
+
+        for i in range(len(sorted_estimations)):
+            try:
+                if get_distance(
+                        sorted_estimations[i+1].get_coords(), sorted_estimations[i+2].get_coords()) > get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+2].get_coords()):
+                    sorted_estimations[i].set_leave_spawn(1) #leave spawn
+                    sorted_estimations[i+1].set_leave_spawn(2) #dont set spawn
+
+                if get_distance(sorted_estimations[i].get_coords(), sorted_estimations[i+1].get_coords()) > get_distance((spawn), sorted_estimations[i+1].get_coords()):
+                    sorted_estimations[i].set_leave_spawn(3) # dont set spawn if next sh is closer to spawn than your current sh
+            except IndexError:
+                break
+
+        for i in range(len(temp)):
+            print(temp[i], sorted_estimations[i].get_leave_spawn(), temp[i] ==
+                  sorted_estimations[i].get_leave_spawn())
+            
+
+        return sorted_estimations
