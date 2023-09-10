@@ -1,3 +1,6 @@
+THIS IS NOT USED AT ALL IN THE NEW OPTIMIZED OPTIMIZED PATHFINDING PLEASE IGNORE THIS ITS JUST HERE ON THE VERY SLIGHT CHANCE ILL EVER NEED IT 
+also i think its the code used in the current releases cause i havent fixed the new version enough to release anything lol
+
 import tkinter as tk
 from tkinter import messagebox
 from utils import *
