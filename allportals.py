@@ -21,7 +21,7 @@ next button disabled
 qs file reading
 first 8 strongholds list
 delete print statements
-2 read path qs file tests
+2 read path qs file tests 
 
 THINGS TO FIX
 make pathfind from coords work
@@ -314,19 +314,23 @@ class AllPortals:
         self.c2 = False
         self.noGraph = False # i still have no idea what either of these do
 
+        #Get the current screen width and height
+        screen_height = self.root.winfo_screenheight() #1080
+        screen_width = self.root.winfo_screenwidth() #1920
+
         self.root.config(bg=lightblue)
         self.toggle_frame.config(height=70, width=200, bg=lightblue)
         self.topmost_toggle.config(bg=lightblue, activebackground=pressblue)
 
         # puts some nice lil frames in the gui and then the buttons go in the frames and its 10000x easier to have everything where you want it to go
-        self.sh_frame = tk.Frame(self.root, height=70, width=280)             
-        self.bt_frame = tk.Frame(self.root, height=40, width=280)
-        self.new_buttons_frame = tk.Frame(self.root, height=120, width=200)
-        self.inst_frame = tk.Frame(self.root, height=70, width=280)
+        self.sh_frame = tk.Frame(self.root, height=(70/1080)*screen_height, width=(280/1920)*screen_width)             
+        self.bt_frame = tk.Frame(self.root, height=(40/1080)*screen_height, width=(280/1920)*screen_width)
+        self.new_buttons_frame = tk.Frame(self.root, height=(120/1080)*screen_height, width=(200/1920)*screen_width)
+        self.inst_frame = tk.Frame(self.root, height=(70/1080)*screen_height, width=(280/1920)*screen_width)
 
         #frames inside frame for next/empty buttons
-        self.newnext_button_frame = tk.Frame(self.bt_frame, height=40, width=140)
-        self.empty_button_frame = tk.Frame(self.bt_frame, height=40, width=140)
+        self.newnext_button_frame = tk.Frame(self.bt_frame, height=(40/1080)*screen_height, width=(140/1920)*screen_width)
+        self.empty_button_frame = tk.Frame(self.bt_frame, height=(40/1080)*screen_height, width=(140/1920)*screen_width)
         #put button frames into bt_frame
         self.newnext_button_frame.grid(row=1, column=1)
         self.empty_button_frame.grid(row=1, column=2)
