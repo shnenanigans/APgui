@@ -19,7 +19,7 @@ def is_prime(n):
 
 def write_nodes_qs_file(pos: tuple, estimations: list):
     """writes estimated sh list to qs file for concord to calculate"""
-    #return
+    return
     #get rid of the 'return' after testing
     with open("strongholds.qs", "w+") as qs_file:
         # write node count, edge count, and starting position to the qs file

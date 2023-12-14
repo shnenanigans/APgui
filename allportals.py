@@ -178,7 +178,7 @@ class AllPortals:
         except:
             self.strongholds.estimations = []
             self.next_button.config(state="normal")
-            tk.messagebox.showerror("no", "solve and save the qs file idiot")
+            tk.messagebox.showerror("no", "solve and save the qs file idiot") # i forget how it gets to this point but ive definitely had this error so dont get rid of it
             return
 
         # get rid of all widgets from the first-strongholds part
@@ -344,6 +344,7 @@ class AllPortals:
         #grid propogate cause the stuff in them uses grid not pack
         self.bt_frame.grid_propagate("false")
         self.new_buttons_frame.grid_propagate("false")
+        #the whole point of all of that is to let the user resize the window to hide the useless/rarely used buttons and info, and only display coords and next button
 
         #center the widgets (thanks pncake)
         self.new_buttons_frame.grid_columnconfigure(0, weight=1)
@@ -374,6 +375,7 @@ class AllPortals:
             height=1,
             width=5,
             borderwidth=3,
+            state="disabled"
         )
 
         #buttons that go in new_buttons_frame
@@ -622,10 +624,15 @@ class AllPortals:
             self.find_from_coords(True)
             return
         
-        if self.strongholds.next_stronghold().is_8th_ring() and not self.strongholds.empty_index:
-            self.empty_button.config(state="normal")
-        else:
-            self.empty_button.config(state="disabled")
+        try:
+            if self.strongholds.next_stronghold(2).is_8th_ring() and not self.strongholds.empty_index: #next_stronghold(2) because it hasnt been completed yet (happens below)
+                self.empty_button.config(state="normal")
+                print("empty button show")
+            else:
+                self.empty_button.config(state="disabled")
+                print("empty button disable")
+        except IndexError:
+            pass #error when u get to the end
 
         # very important, fix place/grid stuff later
         if self.done:
@@ -710,7 +717,7 @@ class AllPortals:
         self.strongholds.next_stronghold().set_empty(True)
         self.strongholds.empty_index = self.strongholds.get_completed_count()
         self.graph_point(self.strongholds.get_next_sh_coords(), "red")
-        self.strongholds.add_completed_8th_ring()
+        self.next_sh()
 
     def find_from_coords(self, auto: bool=False):
         """sets current location. Auto is false when user presses the button, true when program finds 8th ring optimization on its own"""
