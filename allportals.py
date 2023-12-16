@@ -36,6 +36,7 @@ completedcount-8 is wrong after empty sector probably
 pathfinding despairge
 line from empty sector to next sh because leave spawn wouldnt work
 make hotkey pause not just return
+make stronghold objects have the image properties
 """
 
 class AllPortals:
@@ -147,7 +148,7 @@ class AllPortals:
 
         backup_strongholds(self.strongholds.completed)
 
-        self.strongholds.estimate_sh_locations()
+        self.strongholds.estimate_sh_locations() # now estimations has sh objects
 
         write_nodes_qs_file(
             self.strongholds.get_last_sh_coords(), self.strongholds.estimations #estimations does not contain stronghold objects yet, just tuples
@@ -162,7 +163,7 @@ class AllPortals:
             self.strongholds.estimations=[]
             return
 
-        self.strongholds.sort_estimations_order_by_path(path) # now estimations has sh objects
+        self.strongholds.sort_estimations_order_by_path(path) 
 
         image_ests = [] # has to have a list of just coords cause idk how else to do the next part
         for sh in self.strongholds.estimations:

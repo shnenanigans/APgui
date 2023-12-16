@@ -8,14 +8,19 @@ from utils import *
 
 
 class Stronghold:
-    def __init__(self, coords: tuple, ring: int, leave_spawn: int = 0, empty_sector: bool = False, dot_colour="green", dot_marker="o"):
+    def __init__(self, coords: tuple, ring: int, leave_spawn: int=0, empty_sector: bool=False):
         """constructor for stronghold class"""
         self.coords = coords
         self.leave_spawn = leave_spawn
         self.empty_sector = empty_sector
         self.ring = ring
-        self.dot_colour = dot_colour
-        self.dot_marker = dot_marker
+        self.colour = "yellow"
+        match leave_spawn:
+            case 0: 
+                self.colour = "green"
+            case 1:
+                self.colour = "purple"
+        self.marker = "o" #default, changed to * when sh objects are made for the last sh in estimate_sh_locations
 
     def get_coords(self) -> tuple:
         """return coords of sh"""
@@ -48,10 +53,6 @@ class Stronghold:
     def get_ring(self):
         """returns sh ring"""
         return self.ring
-    
-    def set_dot_colour(self, colour: str):
-        """sets colour of dot on graph"""
-        self.dot_colour = colour
     
     def set_dot_marker(self, marker: str):
         """sets marker of dot on graph"""
@@ -300,6 +301,8 @@ class Strongholds():
                     # make coords into sh object
                     add_sh = Stronghold(
                         (round(estimate_x), round(estimate_z)), ring+1)
+                    if i==strongholds-2:
+                        add_sh.set_dot_marker("*")
                     # estimations should have only sh objects
                     self.estimations.append(add_sh)
                     print(round(estimate_x), round(estimate_z), ring)
