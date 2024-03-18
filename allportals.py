@@ -14,14 +14,14 @@ from strongholds import Strongholds
 from strongholds import Stronghold
 import random
 import os
+from time import sleep
 
 """
 THINGS TO SET BACK TO NORMAL AFTER TESTING
 next button disabled
 qs file reading
-first 8 strongholds list
 delete print statements
-2 read path qs file tests 
+2 read path qs file tests (i have no idea what this means anymore)
 
 THINGS TO FIX
 make pathfind from coords work
@@ -37,6 +37,7 @@ pathfinding despairge
 line from empty sector to next sh because leave spawn wouldnt work
 make hotkey pause not just return
 make stronghold objects have the image properties
+make it not create another backup when you use backups
 """
 
 class AllPortals:
@@ -154,7 +155,15 @@ class AllPortals:
             self.strongholds.get_last_sh_coords(), self.strongholds.estimations #estimations does not contain stronghold objects yet, just tuples
         )
 
-        path = read_path_qs_file()
+        messagebox.showinfo(
+            title=None,
+            message="Open the strongholds.qs file in this directory with concorde, press solve in the top left, solve it, save it, then press OK.",
+        )
+
+        path = {}
+        while path == {}:
+            path = read_path_qs_file()
+            sleep(3)
 
         if path=="stop": #not sure if this actually does anything at all
             self.next_button.config(
@@ -179,7 +188,7 @@ class AllPortals:
         except:
             self.strongholds.estimations = []
             self.next_button.config(state="normal")
-            tk.messagebox.showerror("no", "solve and save the qs file idiot") # i forget how it gets to this point but ive definitely had this error so dont get rid of it
+            tk.messagebox.showerror("no", "solve and save the qs file idiot") # gets here if you forget to have a saved qs file while in testing configuration (i am the idiot)
             return
 
         # get rid of all widgets from the first-strongholds part
@@ -192,7 +201,8 @@ class AllPortals:
         self.lock_order_label.destroy()
         self.backups_button.destroy()
 
-        self.setspawn_button.destroy()
+        #self.setspawn_button.destroy()
+        self.checkring.destroy()
         self.setup_next()
         self.next_button.destroy()
         self.display_next_sh()
@@ -247,17 +257,25 @@ class AllPortals:
         # IF TESTING U CAN SET THE STATE TO "normal" SO U CAN EASILY USE THE TEST SH LOCATIONS IN STRONGHOLDS.PY
         self.next_button = tk.Button(
             self.root,
-            state="normal",
+            state="disabled",
             text="next",
             command=self.check_next,
             bg=darkpeach,
             activebackground=lightpeach,
         )
 
-        self.setspawn_button = tk.Button(
+        # self.setspawn_button = tk.Button(
+        #     self.root,
+        #     text="Give Spawnpoint",
+        #     command=self.set_spawn,
+        #     bg=darkpeach,
+        #     activebackground=lightpeach,
+        # )
+
+        self.checkring = tk.Button(
             self.root,
-            text="Give Spawnpoint",
-            command=self.set_spawn,
+            text="Check Ring",
+            command=self.find_sh_ring,
             bg=darkpeach,
             activebackground=lightpeach,
         )
@@ -288,7 +306,8 @@ class AllPortals:
         )
         self.lock_order_label.grid(row=3, column=6, rowspan=3)
 
-        self.setspawn_button.grid(row=7, column=6)
+        #self.setspawn_button.grid(row=7, column=6)
+        self.checkring.grid(row=7, column=6)
         self.next_button.grid(row=9, column=6)
 
     def use_backup(self):
@@ -301,7 +320,6 @@ class AllPortals:
             coords.append(lines[-1])
         for coord in coords:
             sh = tuple(parse_input(coord))
-            print(self.strongholds.get_completed_count())
             sh = Stronghold(sh, get_stronghold_ring(sh))
             self.complete_sh(sh)
             self.strongholds.set_current_location(sh.get_coords())
@@ -388,12 +406,21 @@ class AllPortals:
             borderwidth=3,
         )
         #button for repathfinding probably shouldve found a better name than 'got lost' oh well
-        self.got_lost = tk.Button(
+        # self.got_lost = tk.Button(
+            # self.new_buttons_frame,
+            # text="Pathfind from coords",
+            # command=self.find_from_coords,
+            # borderwidth=3,
+        # )
+        
+        #button for checking what ring coords are
+        self.check_ring_bt = tk.Button(
             self.new_buttons_frame,
-            text="Pathfind from coords",
-            command=self.find_from_coords,
+            text="check ring",
+            command=self.find_sh_ring,
             borderwidth=3,
         )
+
         #give program your spawnpoint for more accurate optimizations
         self.setspawn_button = tk.Button(
             self.new_buttons_frame,
@@ -414,7 +441,8 @@ class AllPortals:
 
         self.set_hotkey_button.grid(row=0)
         self.setspawn_button.grid(row=1)
-        self.got_lost.grid(row=2)
+        #self.got_lost.grid(row=2)
+        self.check_ring_bt.grid(row=2)
 
         self.newnext_button.pack()
         self.empty_button.pack()
@@ -453,16 +481,12 @@ class AllPortals:
             last_path = self.strongholds.completed[-1].get_leave_spawn()
             match last_path:
                 case 0: 
-                    print("GREEN")
                     colour = "green"
                 case 1:
-                    print("PURPLE")
                     colour = "purple"
                 case 2:
-                    print("YELLOW")
                     colour = "yellow"
                 case 3:
-                    print("YELLOW")
                     colour = "yellow"
         except IndexError:
             pass
@@ -506,7 +530,6 @@ class AllPortals:
                 self.strongholds.get_next_sh_coords(),
                 "blue",
             )
-            print(f"graph point: {colour}, line: blue")
         except IndexError as e:
             pass
         plt.draw()
@@ -528,6 +551,38 @@ class AllPortals:
             length_includes_head=True,
         )
         plt.draw()
+
+    def find_sh_ring(self) -> int:
+        """find what ring coords given by user are in"""
+        new_coords = tk.simpledialog.askstring(
+            ":D",
+            "Type out the x and z coordinates of the stronghold you want to check the ring of.",
+        )
+        try:
+            sh_coords = tuple(parse_input(new_coords))
+        except:
+            tk.messagebox.showerror(
+                message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
+            )
+            return
+        try:
+            ring = get_stronghold_ring(sh_coords)
+        except:
+            tk.messagebox.showinfo(
+                message="These coords do not appear to be in any ring."
+            )
+            return
+        
+        if ring == 0:
+            tk.messagebox.showinfo(
+                message="These coords do not appear to be in any ring."
+            )
+            return
+        
+        tk.messagebox.showinfo(
+            message=f"ring {get_stronghold_ring(sh_coords)}"
+        )
+        return
 
     def set_bg_colours(self):
         """colour codes the spawn point things so people dont forget surely they wont forget right suuuuurely"""
@@ -558,7 +613,8 @@ class AllPortals:
         self.topmost_toggle.config(bg=frame, activebackground=press)
         self.newnext_button.config(bg=button, activebackground=press)
         self.set_hotkey_button.config(bg=button, activebackground=press)
-        self.got_lost.config(bg=button, activebackground=press)
+        #self.got_lost.config(bg=button, activebackground=press)
+        self.check_ring_bt.config(bg=button, activebackground=press)
         self.sh_label.config(bg=frame)
         self.setspawn_button.config(bg=button, activebackground=press)
         self.inst_frame.config(bg=frame)
@@ -594,7 +650,7 @@ class AllPortals:
                 sh_data[0], sh_data[1], sh_data[3]
             )
         )  # print in case user needs to see previous locations
-        print(f"GET LEAVE SPAWN = {self.strongholds.next_stronghold().get_leave_spawn()}\n\n")
+        print(f"GET LEAVE SPAWN = {self.strongholds.next_stronghold().get_leave_spawn()}\n")
         self.sh_label.config(
             text="Stronghold {0}:\n{1} at angle {2}".format(
                 sh_data[0], sh_data[1], sh_data[3]
@@ -612,46 +668,49 @@ class AllPortals:
             self.strongholds.add_completed_8th_ring()
 
         # optimization for when last 8th ring is empty
-        print(f"HERE {self.strongholds.completed_8th_ring}, {self.strongholds.empty_index}")
         if self.strongholds.completed_8th_ring == 9 and not self.strongholds.empty_index:
-            for elem in self.strongholds.estimations[self.strongholds.get_completed_count()+1:]: # check strongholds left in estimations for empty sector, elem contains sh object
+
+            #for elem in self.strongholds.estimations[self.strongholds.get_completed_count()+1:]:
+            for i in range(len(self.strongholds.estimations)-self.strongholds.get_completed_count()+1): # check strongholds left in estimations for empty sector, elem contains sh object
+                elem = self.strongholds.estimations[i+self.strongholds.get_completed_count()+1]
                 if elem.get_ring()==8:
                     elem.set_empty(True)
                     self.complete_sh(elem) # puts empty ring as the last completed sh
                     self.strongholds.empty_index = self.strongholds.get_completed_count()-1 # sets index of empty sector in completed sh array
+                    self.strongholds.estimations[i+self.strongholds.get_completed_count()-1].set_leave_spawn(0) #otherwise program will tell user not to set spawn, but then skip the 8th ring sh taking them right to the next one.
                     self.strongholds.estimations.remove(elem) # gets it out of estimations for the new pathfinding
                     self.graph_point(elem.get_coords(), "red")
+                    break
             self.strongholds.add_completed_8th_ring()
-            self.find_from_coords(True)
+            #self.find_from_coords(True)
             return
         
         try:
             if self.strongholds.next_stronghold(2).is_8th_ring() and not self.strongholds.empty_index: #next_stronghold(2) because it hasnt been completed yet (happens below)
                 self.empty_button.config(state="normal")
-                print("empty button show")
             else:
                 self.empty_button.config(state="disabled")
-                print("empty button disable")
         except IndexError:
             pass #error when u get to the end
 
-        # very important, fix place/grid stuff later
+        # very important
         if self.done:
             try:
                 self.sh_label.config(text=silly_list[self.silly_count])
                 self.silly_count += 1
             except IndexError:
-                self.new_buttons_frame.destroy()
-                self.toggle_frame.destroy()
-                self.sh_frame.destroy()
-                self.inst_frame.destroy()
-                self.bt_frame.place(x=0, y=0, anchor="nw")
-                self.bt_frame.config(height=110, width=280)
-                self.bt_frame.lift()
-                self.newnext_button.config(command=self.movebutton)
-                pass
+                # self.new_buttons_frame.destroy()
+                # self.toggle_frame.destroy()
+                # self.sh_frame.destroy()
+                # self.inst_frame.destroy()
+                # self.bt_frame.pack()
+                # self.bt_frame.config(background="pink")
+                # self.bt_frame.lift()
+                # self.newnext_button.config(command=self.movebutton)
+                pass #sadpag i am too lazy to make this thing work
 
         elif self.strongholds.get_finished(): # means the user is done filling portals and gives the graph a pretty little star :D
+            #this entire thing is broken idk man
             try:
                 if (
                     self.strongholds.estimations.index(
@@ -661,7 +720,6 @@ class AllPortals:
                     + len(self.strongholds.estimations)
                     - 129
                 ):
-                    print("done!")
                     return
                 self.complete_sh(self.strongholds.estimations[self.strongholds.get_completed_count()])
                 self.strongholds.set_current_location(
@@ -682,12 +740,10 @@ class AllPortals:
                 plt.draw()
             except IndexError:
                 pass
-            print("done!")
             self.done = True
             self.silly_count = 0
 
         else:
-            print(f"COMPLETED SH {self.strongholds.get_next_sh_coords()}")
             self.complete_sh(self.strongholds.estimations[self.strongholds.get_completed_count()-8]) # will probably change after empty sector
             try:
                 self.optimize_next_3_nodes()
@@ -788,8 +844,8 @@ class AllPortals:
             self.strongholds.estimations[i] = sorted_estimations[j]
             j += 1
 
-        for i in range(len(self.strongholds.estimations)):
-            print(copied_estimations[i].get_coords(), self.strongholds.estimations[i].get_coords(), copied_estimations[i]==self.strongholds.estimations[i])
+        # for i in range(len(self.strongholds.estimations)):
+            # print(copied_estimations[i].get_coords(), self.strongholds.estimations[i].get_coords(), copied_estimations[i]==self.strongholds.estimations[i])
 
         try:
             self.optimize_next_3_nodes()
@@ -801,7 +857,7 @@ class AllPortals:
         self.newnext_button.config(state="normal")
 
     def set_next_hotkey(self):
-        """sets hotkey to go to the next stronghold when you press the set hotkey button"""
+        """sets hotkey to go to the next stronghold when you press the set hotkey button, or esc to remove hotkey."""
         colour = self.set_hotkey_button.cget("background")
         try:
             self.listener.stop()
@@ -817,7 +873,10 @@ class AllPortals:
             self.set_hotkey_button.config(text="Next SH Hotkey", bg=colour)
             self.next_stronghold_hotkey = ""
         else:
-            print("set hotkey to " + self.next_stronghold_hotkey)
+            try:
+                print("set hotkey to " + self.next_stronghold_hotkey) #user can press esc to set no hotkey. gives a typerror which is kinda goofy but thisll work
+            except:
+                self.set_hotkey_button.config(text=f"Next SH Hotkey", bg=colour)
             self.set_hotkey_button.config(text=f"Next SH Hotkey: {self.next_stronghold_hotkey}", bg=colour)
             self.listener.start()
 

@@ -26,7 +26,7 @@ class Stronghold:
         """return coords of sh"""
         return self.coords
 
-    def get_leave_spawn(self) -> int:
+    def get_leave_spawn(self):
         """return where to set spawn. 0=normal, 1=leave spawn, 2=no spawn, 3=spawn at origin"""
         return self.leave_spawn
 
@@ -34,8 +34,8 @@ class Stronghold:
         """set coords of sh"""
         self.coords = coords
 
-    def set_leave_spawn(self, leave_spawn: int):
-        """set where to set spawn"""
+    def set_leave_spawn(self, leave_spawn):
+        """set where to set spawn. 0=normal, 1=leave spawn, 2=no spawn, 3=spawn at origin"""
         self.leave_spawn = leave_spawn
 
     def is_8th_ring(self) -> bool:
@@ -144,6 +144,7 @@ class Strongholds():
 
     def get_finished(self) -> bool:
         """true if portals are all filled"""
+        print(f"checking finished: {self.get_completed_count()} + {self.empty_index}")
         # apparently you can add ints and bools??? empty_index==0 when empty sector has not been found and adds 1 to completed count. if it has been found then completed count is normal cause empty sector location is added to completed array somewhere else
         return self.get_completed_count() + (self.empty_index == 0) >= 128
 
@@ -163,7 +164,7 @@ class Strongholds():
         """returns index of empty sh in completed array"""
         return self.empty_index
 
-    def get_next_sh(self) -> [int, tuple, int, float]:
+    def get_next_sh(self) -> list[int, tuple, int, float]:
         """returns # completed shs, next sh nether coords, distance to next sh (in nether), angle to next sh"""
         next_n_coords = get_nether_coords(self.get_next_sh_coords())
         return (

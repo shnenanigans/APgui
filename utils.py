@@ -19,7 +19,7 @@ def is_prime(n):
 
 def write_nodes_qs_file(pos: tuple, estimations: list):
     """writes estimated sh list to qs file for concord to calculate"""
-    return
+    #return
     #get rid of the 'return' after testing
     with open("strongholds.qs", "w+") as qs_file:
         # write node count, edge count, and starting position to the qs file
@@ -49,29 +49,18 @@ def read_path_qs_file():
     #dict.values-1 will give the index in whatever array we gave concord
     #that part is solved in sort_estimations_order_by_path in strongholds.py
     #also the first key and the last value are always 0
-    while True:
-        try:
-            messagebox.showinfo(
-                title=None,
-                message="Open the strongholds.qs file in this directory with concorde, press solve in the top left, solve it, save it, then press OK.",
-            )
-                
-            with open("strongholds.qs", "r") as qs_file:
-                lines = qs_file.readlines()
+    try:
+        with open("strongholds.qs", "r") as qs_file:
+            lines = qs_file.readlines()
 
-            path = {}
-            for i in range(int(lines[0].split()[0]) + 1, len(lines)):
-                start, next_node, dist = lines[i].split()
-                path[int(start)] = int(next_node)
+        path = {}
+        for i in range(int(lines[0].split()[0]) + 1, len(lines)):
+            start, next_node, dist = lines[i].split()
+            path[int(start)] = int(next_node)
 
-            return path
-        except Exception as e:
-            print(e)
-            messagebox.showerror(
-                title=None,
-                message="Make sure to solve and save the strongholds.qs file before pressing OK.",
-            )
-            continue
+        return path
+    except Exception as e:
+        pass
 
 
 def get_distance(x1, x2):
@@ -97,9 +86,11 @@ def backup_strongholds(strongholds):
         "w+",
     ) as backup:
         # overly silly regex to simplify the list for writing to the file
-        backup.writelines(
-            re.sub("[^0-9|^\-|^ |^\n]", "", "\n".join(map(str, strongholds)))
-        )
+        lines = ""
+        for sh in strongholds:
+            lines += f"{sh.get_coords()[0]} {sh.get_coords()[1]}\n"
+        print(lines)
+        backup.writelines(lines)
 
 
 def printHelp():
@@ -251,9 +242,9 @@ def optimize_spawnpoint_abuse(estimations: list, spawn: tuple) -> list:
             except IndexError:
                 break
 
-        for i in range(len(temp)):
-            print(temp[i], sorted_estimations[i].get_leave_spawn(), temp[i] ==
-                  sorted_estimations[i].get_leave_spawn())
+        # for i in range(len(temp)):
+        #     print(temp[i], sorted_estimations[i].get_leave_spawn(), temp[i] ==
+        #           sorted_estimations[i].get_leave_spawn())
             
 
         return sorted_estimations
