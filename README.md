@@ -17,7 +17,7 @@ It will prompt you to enter in the locations of your first 8 strongholds. You ca
 
 For exampe:
 
-![image](https://github.com/shnenanigans/APgui/assets/83895136/7c5bf362-6b85-4962-a999-4eaa603080bf)
+![image](https://github.com/shnenanigans/APgui/assets/83895136/5932134a-5b23-4020-9751-a5c730dfe1cd)
 
 The input should look like that. Either a pasted f3+c or your x and z coordinates typed with only a space in between.
 
@@ -29,23 +29,31 @@ Once all 8 locations are locked, press next. This will cause the program to esti
 
 Double click the .qs file. If it does not open with concord, make sure you have it downloaded and select 'open with concord'.
 
-Press the 'solve' tab, then 'ok' with the default parameters. Then save it and CLOSE CONCORD. Bad things happen if you do not close concord.
+![image](https://github.com/shnenanigans/APgui/assets/83895136/4ae2c2bb-c69b-418b-a35d-68b082c1ccdb)
 
-Press 'ok' on the pop-up instruction box. (if you press 'ok' before saving the .qs file it will just show up again)
+![image](https://github.com/shnenanigans/APgui/assets/83895136/21e29f03-7d13-4086-a6cf-45af26e46652)
+
+![image](https://github.com/shnenanigans/APgui/assets/83895136/0c7f649d-7314-402a-b13e-71a3114bfcc8)
+
+Press the 'solve' tab, then 'ok' with the default parameters (as shown above). Then save it and CLOSE CONCORD. Bad things happen if you do not close concord.
+
+Press 'ok' on the pop-up instruction box. The program will continually check for a saved strongholds.qs file and then update automatically.
+
+If you accidentally closed the program and need to use backups, press the 'use last backups' button. Pretty self explanatory. Only problem with it is that the backups files are only created after you press 'next', not as you lock strongholds. If you accidentally close the program while finding the first 8 strongholds there is nothing I can do to help you.
 
 Now, the program should show two windows. One with coords and one with the portals graph.
 
-![image](https://github.com/shnenanigans/APgui/assets/83895136/7a1d6677-92a0-40a7-b406-0420d7270ff4)
+![image](https://github.com/shnenanigans/APgui/assets/83895136/cba38ec1-7373-477b-8de1-aa42521ed5cd)
 
 Do not activate the Portal Graph window and press Q, K, or L. It will either close the window or mess up the graph and I have no idea why or how to stop it.
 
-Make sure you add the graph, stronghold count, and fun facts to OBS.
+Make sure you add the gui, graph, stronghold count, and fun facts to OBS. (very important)
 
 The 'Find Portals' window is set up so that you can resize it to show only important information, since using the extra buttons is rare during a run.
 
-![image](https://github.com/shnenanigans/APgui/assets/83895136/913096de-a1aa-4426-a843-b672a23bd51c)
+![image](https://github.com/shnenanigans/APgui/assets/83895136/f2eb3a2b-149d-40cd-b9a8-d15298c86051)
 
-This will also hide the messages showing when you are at an 8th ring stronghold, when to leave your spawn behind, and when to not set spawn at all. At an 8th ring stronghold you will only see the 'empty' button (to press if you find the empty sector) and the spawn instructions are also colour coded if they are hidden in window resizing.
+This will also hide the messages showing when you are at an 8th ring stronghold, when to leave your spawn behind, and when to not set spawn at all. At an 8th ring stronghold you will only see the 'empty' button (to press if you find the empty sector) and the spawn instructions are also colour coded in case they are hidden in window resizing.
 
 Blue = set spawn normally
 
@@ -55,13 +63,17 @@ Green = Do not set spawn at all
 
 Here is an example of what the program would look like when getting to an 8th ring stronghold:
 
-![image](https://github.com/shnenanigans/APgui/assets/83895136/d2be9011-d2ba-432f-838b-7f847e265c0c)
+![image](https://github.com/shnenanigans/APgui/assets/83895136/0823261d-2beb-4e96-9bd3-e928a21863f7)
 
 As you can see, all important information can still be found in a resized window if you remember the colour codes and that the 8th ring has an 'empty' button.
 
+**Extra Buttons**
+
+The 'Next SH Hotkey' button works as it sounds. It will allow you to hotkey instead of pressing 'next' on the gui. Just click it, enter a hotkey, and it should work. To remove a hotkey, set it to 'esc'. Also, it will not allow you to use q, k, or l as hotkeys because those close the portals graph (although only if you are tabbed into the graph, better safe than sorry ig)
+
 **How does it work?**
 
-The problem with the previous All Portals program was that it didn't account for the fact that a player could simply not set their spawn and immediately teleport back to 0, 0. Not only that, but a player can leave their spawn at a previous stronghold. What this program does is, on every stronghold, it will look at the next 3 ahead of it and sees if the distance between the current stronhold and the one 2 ahead is shorter than the distance between that and the next one. In this case, the player would leave their spawn behind.
+The problem with the previous All Portals program was that it didn't account for the fact that a player could simply not set their spawn and immediately teleport back to 0, 0. Not only that, but a player can leave their spawn at a previous stronghold. What this program does is, on every stronghold, it will look at the next 3 ahead of it and see if the distance between the current stronhold and the one 2 ahead is shorter than the distance between that and the next one. In this case, the player would leave their spawn behind.
 
 For example:
 
@@ -84,7 +96,5 @@ blue = next stronghold
 purple = leave spawn behind
 
 yellow = do not set spawn
-
-star = done!
 
 
