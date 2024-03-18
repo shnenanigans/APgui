@@ -38,6 +38,7 @@ line from empty sector to next sh because leave spawn wouldnt work
 make hotkey pause not just return
 make stronghold objects have the image properties
 make it not create another backup when you use backups
+fix all blue dots after 8th ring optimizations
 """
 
 class AllPortals:
