@@ -71,6 +71,10 @@ As you can see, all important information can still be found in a resized window
 
 The 'Next SH Hotkey' button works as it sounds. It will allow you to hotkey instead of pressing 'next' on the gui. Just click it, enter a hotkey, and it should work. To remove a hotkey, set it to 'esc'. Also, it will not allow you to use q, k, or l as hotkeys because those close the portals graph (although only if you are tabbed into the graph, better safe than sorry ig)
 
+The 'Check ring' button works as it sounds. You can enter coords or f3c, like the first 8 strongholds.
+
+The 'Setspawn' button is kinda cosmetic. Basically, all the calculations to find if spawn is closer to your next stronghold or not are based on 0 0, so if you want to guarantee accuracy you can enter your actual spawn point coords.
+
 **How does it work?**
 
 The problem with the previous All Portals program was that it didn't account for the fact that a player could simply not set their spawn and immediately teleport back to 0, 0. Not only that, but a player can leave their spawn at a previous stronghold. What this program does is, on every stronghold, it will look at the next 3 ahead of it and see if the distance between the current stronhold and the one 2 ahead is shorter than the distance between that and the next one. In this case, the player would leave their spawn behind.
