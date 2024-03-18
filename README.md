@@ -81,7 +81,7 @@ For example:
 
 The old AP program would have told the player to go in order of the numbers and set spawn at every blind.
 
-Here, the program is telling the player to leave spawn at 2, go to 3, teleport to 2 when they go through the end portal, and then go to 4. This is because it has detected that the distance between 2 and 4 is shorter than the distance between 3 and 4.
+Instead, the program is telling the player to leave spawn at 2, go to 3, teleport to 2 when they go through the end portal, and then go to 4. This is because it has detected that the distance between 2 and 4 is shorter than the distance between 3 and 4.
 
 ![image](https://github.com/shnenanigans/APgui/assets/83895136/e36714b9-64a7-4595-aa5e-bbc4caaab14b)
 
