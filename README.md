@@ -75,6 +75,8 @@ The 'Check ring' button works as it sounds. You can enter coords or f3c, like th
 
 The 'Setspawn' button is kinda cosmetic. Basically, all the calculations to find if spawn is closer to your next stronghold or not are based on 0 0, so if you want to guarantee accuracy you can enter your actual spawn point coords.
 
+You may have noticed there is no longer a 'Pathfind from coords' button. This is because it wasn't working and I tried to fix it but then it kept breaking and nothing worked and no one ever uses it anyway so just don't forget to set spawn.
+
 **How does it work?**
 
 The problem with the previous All Portals program was that it didn't account for the fact that a player could simply not set their spawn and immediately teleport back to 0, 0. Not only that, but a player can leave their spawn at a previous stronghold. What this program does is, on every stronghold, it will look at the next 3 ahead of it and see if the distance between the current stronhold and the one 2 ahead is shorter than the distance between that and the next one. In this case, the player would leave their spawn behind.
