@@ -104,3 +104,7 @@ purple = leave spawn behind
 yellow = do not set spawn
 
 
+credit:
+@thetalkingmime
+@shnenanigans
+@machliah
