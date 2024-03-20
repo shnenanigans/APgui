@@ -37,9 +37,9 @@ Double click the .qs file. If it does not open with concord, make sure you have 
 
 Press the 'solve' tab, then 'ok' with the default parameters (as shown above). Then save it and CLOSE CONCORD. Bad things happen if you do not close concord.
 
-Press 'ok' on the pop-up instruction box. The program will continually check for a saved strongholds.qs file and then update automatically.
+Press 'ok' on the pop-up instruction box. The program will continually check for a saved strongholds.qs file and then update automatically. The program will NOT continue until you press "ok" so if you lose the messagebox, just alt+tab to it because it won't pop up if you just click the tkinter window (even though it's supposed to idk why it doesn't).
 
-If you accidentally closed the program and need to use backups, press the 'use last backups' button. Pretty self explanatory. Only problem with it is that the backups files are only created after you press 'next', not as you lock strongholds. If you accidentally close the program while finding the first 8 strongholds there is nothing I can do to help you.
+If you accidentally closed the program and need to use backups, press the 'use last backups' button. You will have to re-solve concord and hit 'next' until you get to the stronghold you were on (DO NOT FORGET TO PRESS EMPTY ON THE EMPTY SECTOR IF YOU'VE ALREADY FOUND IT). Also, the backups files are only created after you press 'next', not as you lock strongholds. If you accidentally close the program while finding the first 8 strongholds it will create an 'emegergency backup for stupid idiots' and you can find your coords in there. You will not be able to press 'use last backup' if you need the emergency backup because that's a lot of effort on my part when you should know better than to close the program and creating that thing was enough effort as is so you can suffer through a bit of copy pasting because at least you don't have to watch back your vod (you're welcome).
 
 Now, the program should show two windows. One with coords and one with the portals graph.
 
