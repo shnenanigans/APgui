@@ -1,6 +1,6 @@
 import numpy as np
-import time
 from tkinter import simpledialog
+from tkinter import messagebox
 
 from utils import get_stronghold_ring, get_distance, get_mc_angle, get_nether_coords
 import constants

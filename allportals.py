@@ -3,8 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pynput import keyboard
-import time
-import sys
+from sys import exit
 from tkinter import simpledialog
 from tkinter import messagebox
 
@@ -12,8 +11,8 @@ from constants import *
 from utils import *
 from strongholds import Strongholds
 from strongholds import Stronghold
-import random
-import os
+#import random
+from os import getcwd, listdir
 from time import sleep
 
 """
@@ -63,7 +62,7 @@ class AllPortals:
         self.root.config(bg=peach)
         self.root.title("Find Portals")
         self.root.wm_attributes("-topmost", 0) #changes to 1 when the 'always on top' box is checked
-        self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), sys.exit(0)]) #for some reason the program doesnt stop when you close tkinter unless u have this thing
+        self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), exit(0)]) #for some reason the program doesnt stop when you close tkinter unless u have this thing (thanks desktop)
 
     def create_image(self):
         """create the image showing portals path and completed portals"""
@@ -312,8 +311,8 @@ class AllPortals:
         self.next_button.grid(row=9, column=6)
 
     def use_backup(self):
-        path = (os.getcwd() + "\\backups")
-        with open(path + "\\" + os.listdir(path)[0], "r") as f:
+        path = (getcwd() + "\\backups")
+        with open(path + "\\" + listdir(path)[0], "r") as f:
             lines = f.readlines()
             coords=[]
             for sh in lines[:-1]:
@@ -887,9 +886,9 @@ class AllPortals:
             self.newnext_button.invoke()
             return
 
-    def movebutton(self):
-        """moves the next button around like an aim trainer hehehehe"""
-        x=random.uniform(0.1,0.9)
-        y=random.uniform(0.1,0.9)
-        self.newnext_button.place(relx=x, rely=y)
-        self.newnext_button.lift()
+    # def movebutton(self):
+    #     """moves the next button around like an aim trainer hehehehe"""
+    #     x=uniform(0.1,0.9)
+    #     y=uniform(0.1,0.9)
+    #     self.newnext_button.place(relx=x, rely=y)
+    #     self.newnext_button.lift()
