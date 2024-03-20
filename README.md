@@ -69,7 +69,7 @@ As you can see, all important information can still be found in a resized window
 
 **Extra Buttons**
 
-The 'Next SH Hotkey' button works as it sounds. It will allow you to hotkey instead of pressing 'next' on the gui. Just click it, enter a hotkey, and it should work. To remove a hotkey, set it to 'esc'. Also, it will not allow you to use q, k, or l as hotkeys because those close the portals graph (although only if you are tabbed into the graph, better safe than sorry ig)
+The 'Next SH Hotkey' button works as it sounds. It will allow you to hotkey instead of pressing 'next' on the gui. Just click it, enter a hotkey, and it should work. To remove a hotkey, set it to 'esc'. Also, it will not allow you to use q, k, or l as hotkeys because those close the portals graph (although only if you are tabbed into the graph, better safe than sorry ig). If you want arrow keys you can type page_up and page_down into the box. You can put official key names for any key I just don't know what they are except those ones.
 
 The 'Check ring' button works as it sounds. You can enter coords or f3c, like the first 8 strongholds.
 
