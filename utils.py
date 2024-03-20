@@ -57,7 +57,7 @@ def read_path_qs_file():
 
         return path
     except Exception as e:
-        pass
+        return {}
 
 
 def get_distance(x1, x2):

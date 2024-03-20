@@ -62,7 +62,18 @@ class AllPortals:
         self.root.config(bg=peach)
         self.root.title("Find Portals")
         self.root.wm_attributes("-topmost", 0) #changes to 1 when the 'always on top' box is checked
-        self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), exit(0)]) #for some reason the program doesnt stop when you close tkinter unless u have this thing (thanks desktop)
+        #self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), exit(0)]) #for some reason the program doesnt stop when you close tkinter unless u have this thing (thanks desktopfolder)
+        def on_closing(): #putting this in the lambda didnt work :(
+            shs = self.strongholds.completed
+            if len(shs)<=8:
+                with open("emergency backup for stupid idiots.txt", "w") as idiot:
+                    stupid = ""
+                    for sh in shs:
+                        stupid += f"{sh.get_coords()[0]} {sh.get_coords()[1]}\n"
+                    idiot.writelines(stupid)
+            print('destroy me...')
+            exit(0)
+        self.root.protocol("WM_DELETE_WINDOW", on_closing)
 
     def create_image(self):
         """create the image showing portals path and completed portals"""
@@ -156,7 +167,7 @@ class AllPortals:
         )
 
         messagebox.showinfo(
-            title=None,
+            title="solve save solve save solve save",
             message="Open the strongholds.qs file in this directory with concorde, press solve in the top left, solve it, save it, then press OK.",
         )
 
