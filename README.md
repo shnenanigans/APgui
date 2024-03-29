@@ -29,7 +29,7 @@ Once all 8 locations are locked, press next. This will cause the program to esti
 
 Double click the .qs file. If it does not open with concord, make sure you have it downloaded and select 'open with concord'.
 
-
+![image](https://github.com/shnenanigans/APgui/assets/83895136/8cfc7ef5-cb76-4622-ac15-473cda4d2304)
 
 ![image](https://github.com/shnenanigans/APgui/assets/83895136/21e29f03-7d13-4086-a6cf-45af26e46652)
 
