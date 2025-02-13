@@ -7,9 +7,6 @@ from utils import get_mc_angle, get_stronghold_ring, get_nether_coords
 
 def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stronghold]:
     """creates list of stronghold objects in the order that the player will go to them"""
-    #angle = np.random.random() * np.pi * 2
-    #dist = np.random.randint(22784, 24320 + 1)
-    #STARTING_POINT = (np.cos(angle) * dist, np.sin(angle) * dist)
     OR_SCALE_FACTOR = 10000
 
     STRATEGIES = (
@@ -30,17 +27,6 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         routing_enums_pb2.FirstSolutionStrategy.LOCAL_CHEAPEST_ARC,
         routing_enums_pb2.FirstSolutionStrategy.FIRST_UNBOUND_MIN_VALUE,
     )
-
-    """
-    for ring, (count, minimum, maximum) in enumerate(STRONGHOLD_DATA):
-        first_angle = np.random.random() * np.pi * 2
-        for i in range(count):
-            angle = first_angle + i * np.pi * 2 / count
-            distance = (maximum + minimum) / 2
-            x = np.cos(angle) * distance
-            y = np.sin(angle) * distance
-            points.append((x, y))
-    """
 
     distance_matrix = np.zeros((len(points), len(points)), np.float64)
     origin_reset_matrix = np.zeros((len(points), len(points)), bool)

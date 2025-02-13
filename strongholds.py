@@ -57,7 +57,3 @@ class Stronghold:
         """tell user if sh is in the 8th ring or not"""
         return self.ring == 8
 
-    def get_ring(self):
-        """returns sh ring"""
-        return self.ring
-

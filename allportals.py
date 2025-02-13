@@ -12,6 +12,12 @@ from constants import *
 from utils import *
 from os import getcwd, listdir
 
+"""
+todo
+fix backups not using most recent file
+add set origin in case nether roof portal is far from 0, 0
+next just gives an error at the end of the run
+"""
 
 class AllPortals:
     def __init__(self):
@@ -167,7 +173,6 @@ class AllPortals:
             
         self.first8.append(sh) #first8 contains only tuples of coords
         self.add_count()
-        # plt.savefig("output.png", bbox_inches="tight", transparent=True)
 
         entry.config(state="disabled", cursor="heart") # <3
         button.config(state="disabled", cursor="heart")
@@ -221,7 +226,6 @@ class AllPortals:
         [self.entries[i].grid(row=i, column=2, columnspan=3) for i in range(0, 8)]
 
         # goes to next stage, only works once all 8 locations have been locked
-        # IF TESTING U CAN SET THE STATE TO "normal" SO U CAN EASILY USE THE TEST SH LOCATIONS IN STRONGHOLDS.PY
         self.next_button = tk.Button(
             self.root,
             state="disabled",
@@ -292,6 +296,8 @@ class AllPortals:
         self.c2 = False
         self.noGraph = False # i still have no idea what either of these do
 
+        #if any of the frames and grid stuff in here make no sense it's probably because of previously existing deleted things but it works so i havent checked
+
         #Get the current screen width and height
         screen_height = self.root.winfo_screenheight() #1080
         screen_width = self.root.winfo_screenwidth() #1920
@@ -319,7 +325,7 @@ class AllPortals:
         #grid propogate cause the stuff in them uses grid not pack
         self.bt_frame.grid_propagate("false")
         self.new_buttons_frame.grid_propagate("false")
-        #the whole point of all of that is to let the user resize the window to hide the useless/rarely used buttons and info, and only display coords and next button
+        #the whole point of all of that is to let the user resize the window to hide the useless/rarely used buttons and info, and only display coords and next button even though no one does this anyway yippee
 
         #center the widgets (thanks pncake)
         self.new_buttons_frame.grid_columnconfigure(0, weight=1)
@@ -351,13 +357,6 @@ class AllPortals:
             command=self.set_next_hotkey,
             borderwidth=3,
         )
-        #button for repathfinding probably shouldve found a better name than 'got lost' oh well
-        # self.got_lost = tk.Button(
-            # self.new_buttons_frame,
-            # text="Pathfind from coords",
-            # command=self.find_from_coords,
-            # borderwidth=3,
-        # )
         
         #button for checking what ring coords are
         self.check_ring_bt = tk.Button(
@@ -375,7 +374,6 @@ class AllPortals:
         self.inst_label.pack(fill="both")
 
         self.set_hotkey_button.grid(row=0)
-        #self.got_lost.grid(row=2)
         self.check_ring_bt.grid(row=2)
 
         self.newnext_button.pack()
@@ -456,7 +454,6 @@ class AllPortals:
                 press = pressgreen
                 button = buttongreen
         
-        #bg=colour
         self.root.config(bg=frame)
         self.bt_frame.config(bg=frame)
         self.toggle_frame.config(bg=frame)
@@ -465,7 +462,6 @@ class AllPortals:
         self.topmost_toggle.config(bg=frame, activebackground=press)
         self.newnext_button.config(bg=button, activebackground=press)
         self.set_hotkey_button.config(bg=button, activebackground=press)
-        #self.got_lost.config(bg=button, activebackground=press)
         self.check_ring_bt.config(bg=button, activebackground=press)
         self.sh_label.config(bg=frame)
         self.inst_frame.config(bg=frame)
@@ -524,7 +520,7 @@ class AllPortals:
                 # self.bt_frame.config(background="pink")
                 # self.bt_frame.lift()
                 # self.newnext_button.config(command=self.movebutton)
-                return #sadpag i am too lazy to make this thing work
+                return #sadpag i am too lazy to make this thing work it is supposed to be like an aim trainer
 
         elif self.completed_count == len(self.strongholds): # means the user is done filling portals
             self.done = True
