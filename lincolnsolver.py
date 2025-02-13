@@ -3,10 +3,10 @@ from matplotlib import pyplot as plt
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from strongholds import Stronghold #to make stronghold objects
-from utils import get_mc_angle, get_stronghold_ring, get_nether_coords
+from utils import get_mc_angle, get_stronghold_ring
 
 def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stronghold]:
-    """creates list of stronghold objects in the order that the player will go to them"""
+    """creates list of stronghold objects in the order that the player will go to them. points contains all stronghold location estimations and first8 contains the first 8 locations found by the player."""
     OR_SCALE_FACTOR = 10000
 
     STRATEGIES = (
@@ -34,10 +34,16 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         for j, (x2, y2) in enumerate(points[1:], start=1):
             origin_distance = np.sqrt(x2**2 + y2**2)
             real_distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-            if origin_distance < real_distance:
+            donot = False
+            if get_stronghold_ring((x1, y1)) == 8: #never go back to spawn on 8th ring in case it is empty sector
+                distance_matrix[i][j] = real_distance
+                donot = True
+            elif origin_distance < real_distance:
                 origin_reset_matrix[i][j] = True
 
-            distance_matrix[i][j] = min(origin_distance, real_distance)
+            if not donot:
+                distance_matrix[i][j] = min(origin_distance, real_distance)
+            donot = False
     distance_matrix = np.floor(distance_matrix * OR_SCALE_FACTOR).astype(int).tolist()
 
     manager = pywrapcp.RoutingIndexManager(len(points), 1, 0)
@@ -106,16 +112,15 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
             line_start = first8[i-1]
         
         if i==8:
-            marker = "*"
+            marker = "*" #try to mark starting point with a star oh well it doesnt work anyway
         else:
             marker = "o"
         
         sh = first8[i] #just tuple coords
         strongholds.append(Stronghold(sh, get_stronghold_ring(sh), sh, line_start, marker)) #now contains stronghold objects of first 8
 
-    pointscopy = points.copy()
-
     for i, node in enumerate(route[1:-1], start=1):
+        #each sh object should contain the the angle pointing to it from the last one, and the line going from the last one to the current one
         last_node = route[i - 1]
         next_node = route[i + 1]
         is_reset = origin_reset_matrix[last_node][node]
@@ -154,12 +159,5 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
 
         sh = Stronghold(coords, ring, line_destination, line_start, marker, line_colour, dot_colour, set_spawn, angle)
         strongholds.append(sh)
-
-        pointscopy[node] = 0
-
-    print("finding points")
-    for point in pointscopy:
-        if point != 0:
-            print(point)
     
     return strongholds

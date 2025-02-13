@@ -19,6 +19,8 @@ add set origin in case nether roof portal is far from 0, 0
 next just gives an error at the end of the run
 add warning if next button is pressed too fast to have filled in a portal (Aware)
 make a repathfind button in case someone messes up (i really do not want to do this the thought of repathfinding makes me want to throw my monitor at the wall)
+add found/filled option on first 8 for coop mode
+NO ORIGIN ON 8TH RING IN CASE ITS EMPTY SECTOR i hate this stupid awful empty sector
 
 to make exe:
 pyinstaller --onefile --hiddenimport=ortools.constraint_solver.routing_parameters_pb2 main.py
