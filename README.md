@@ -1,10 +1,6 @@
 # APgui
 Mime's all portals program but with a GUI
 
-Mime's original program: https://github.com/TheTalkingMime/AllPortals
-
-Concord direct download [link](https://www.math.uwaterloo.ca/tsp/concorde/downloads/codes/win/concorde1.1.exe)
-
 **Instructions:**
 
 Make sure the AllPortals.exe and rings.png is in a nice little un-zipped folder
