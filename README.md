@@ -31,6 +31,8 @@ If you accidentally closed the program and need to use backups, press the 'use l
 
 Now, the program should show two windows. One with coords and one with the portals graph.
 
+Please note that the first angle (towards stronghold 9) will be not be correct. The program only knows where the stronghold is, so if you had a close blind it will be kind of close and if you had a very far blind, it won't be right at all.
+
 ![image](https://github.com/user-attachments/assets/c6d8984c-82fc-484e-be18-0ba4c4e67f0f)
 
 Do not activate the Portal Graph window and press Q, K, or L. It will either close the window or mess up the graph and I have no idea why or how to stop it.
