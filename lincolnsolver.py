@@ -34,16 +34,13 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         for j, (x2, y2) in enumerate(points[1:], start=1):
             origin_distance = np.sqrt(x2**2 + y2**2)
             real_distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-            donot = False
             if get_stronghold_ring((x1, y1)) == 8: #never go back to spawn on 8th ring in case it is empty sector
                 distance_matrix[i][j] = real_distance
-                donot = True
-            elif origin_distance < real_distance:
-                origin_reset_matrix[i][j] = True
+            else:
+                if origin_distance < real_distance:
+                    origin_reset_matrix[i][j] = True
 
-            if not donot:
                 distance_matrix[i][j] = min(origin_distance, real_distance)
-            donot = False
     distance_matrix = np.floor(distance_matrix * OR_SCALE_FACTOR).astype(int).tolist()
 
     manager = pywrapcp.RoutingIndexManager(len(points), 1, 0)
