@@ -1,9 +1,8 @@
 import numpy as np
-from matplotlib import pyplot as plt
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from strongholds import Stronghold #to make stronghold objects
-from utils import get_mc_angle, get_stronghold_ring
+from utils import get_stronghold_ring
 
 def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stronghold]:
     """creates list of stronghold objects in the order that the player will go to them. points contains all stronghold location estimations and first8 contains the first 8 locations found by the player."""
@@ -124,7 +123,6 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         is_last = next_node == 0
         coords = points[node]
         set_spawn = 0
-        angle = get_mc_angle(strongholds[-1].get_coords(), coords)
         ring = get_stronghold_ring(coords)
         dot_colour="purple" if is_last else "red" if is_reset else "green"
         line_colour="green"
@@ -140,7 +138,6 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         if i > 2 and strongholds[-2].get_dot_colour() == "blue":
             line_colour = "blue"
             line_start = strongholds[-2].get_coords()
-            angle = get_mc_angle(strongholds[-2].get_coords(), coords)
             last_node = route[i - 2] #make the last sh the one that spawn is currently at, which was filled 2 shs ago
 
         elif 1 < i < len(route) - 2: #figure out if you should leave spawn or not, has to be elif so you dont get blue dot twice in a row honestly it's a miracle this works idk what i did
@@ -151,10 +148,7 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
                     strongholds[-1].set_set_spawn(1)
                     set_spawn = 2
 
-        if is_reset:
-            angle = get_mc_angle((0, 0), coords) #find angle from origin not last sh
-
-        sh = Stronghold(coords, ring, line_destination, line_start, marker, line_colour, dot_colour, set_spawn, angle)
+        sh = Stronghold(coords, ring, line_destination, line_start, marker, line_colour, dot_colour, set_spawn)
         strongholds.append(sh)
     
     return strongholds

@@ -1,17 +1,17 @@
-#no imports feels wrong
+from utils import get_mc_angle
 
 class Stronghold:
-    def __init__(self, coords: tuple, ring: int, line_destination: tuple, line_start: tuple, marker: str, line_colour: str="green", dot_colour: str="green", set_spawn: int=0, angle: int=0):
+    def __init__(self, coords: tuple, ring: int, line_destination: tuple, line_start: tuple, marker: str, line_colour: str="green", dot_colour: str="green", set_spawn: int=0):
         """constructor for stronghold class"""
         self.coords = coords
         self.ring = ring
         self.set_spawn = set_spawn
         self.line_colour = line_colour
         self.dot_colour = dot_colour
-        self.angle = angle #angle from last stronghold
         self.marker = marker
-        self.line_start = line_start
-        self.line_destination = line_destination
+        self.line_start = line_start #previous stronghold
+        self.line_destination = line_destination #current stronghold
+        self.angle = get_mc_angle(line_start, line_destination) #angle from last stronghold
 
     def get_line_colour(self) -> str:
         """return line colour"""
