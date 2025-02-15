@@ -21,6 +21,10 @@ class Stronghold:
         """return angle to get to current stronghold"""
         return self.angle
     
+    def get_marker(self) -> str:
+        """return marker for the stronghold that will show up on the graph"""
+        return self.marker
+    
     def get_line_start(self) -> str:
         """return line start"""
         return self.line_start

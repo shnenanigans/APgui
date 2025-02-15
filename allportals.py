@@ -5,7 +5,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pynput import keyboard
 from sys import exit
 from tkinter import simpledialog
-from tkinter import messagebox
 from lincolnsolver import make_stronghold_list
 
 from constants import *
@@ -25,6 +24,9 @@ add found/filled option on first 8 for coop mode
 to make exe:
 pyinstaller --onefile --hiddenimport=ortools.constraint_solver.routing_parameters_pb2 main.py
 make sure it's parameters not enums even though the regular import is called routing enums
+
+change after testing:
+save graph to image file in initial/update_image and re-comment the tk graph in setup_next
 """
 
 class AllPortals:
@@ -394,6 +396,8 @@ class AllPortals:
         self.new_buttons_frame.grid(row=2, rowspan=2, column=2)
 
         # make a new tkinter window for the graph, has to be toplevel not a whole new tkinter thingy cause it cant multithread or something
+        #uncomment to test faster
+        """
         image=tk.Toplevel()
         image.title("Portals Graph")
         image.config(bg=lightblue)
@@ -409,6 +413,7 @@ class AllPortals:
         thang = FigureCanvasTkAgg(figure=aasdfae, master=image)
         thang.draw()
         thang.get_tk_widget().pack()
+        """
 
     def display_next_sh(self):
         """edit gui to show new coords and angle"""
@@ -513,6 +518,8 @@ class AllPortals:
 
         if self.newnext_button.cget("state") == "disabled": # stops the hotkey from pressing next when button is disabled
             return
+        
+        self.newnext_button.config(state="disabled") #make sure you cant press and hold next button or click before the image updates
 
         # very important
         if self.done:
@@ -530,14 +537,17 @@ class AllPortals:
                 # self.newnext_button.config(command=self.movebutton)
                 return #sadpag i am too lazy to make this thing work it is supposed to be like an aim trainer
 
-        elif self.completed_count == len(self.strongholds): # means the user is done filling portals
+        elif self.completed_count == len(self.strongholds)-1: # means the user is done filling portals
             self.done = True
+            print("done!")
             self.silly_count = 0
 
         else:
             self.add_count()
             self.update_image()
             self.display_next_sh()
+        
+        self.newnext_button.config(state="normal")
 
     def set_next_hotkey(self):
         """sets hotkey to go to the next stronghold when you press the set hotkey button, or esc to remove hotkey."""
@@ -569,8 +579,8 @@ class AllPortals:
             self.newnext_button.invoke()
             return
 
-    def graph_point(self, coords, colour):
-        plt.scatter(coords[0], coords[1], c=colour, s=30)
+    def graph_point(self, coords, colour, marker):
+        plt.scatter(coords[0], coords[1], c=colour, s=30, marker=marker)
         plt.draw()
 
     def graph_line(self, start, end, colour):
@@ -587,16 +597,45 @@ class AllPortals:
         )
         plt.draw()
 
+    def save_graph(self):
+        """save graph to png file for obs"""
+        plt.savefig("output.png", bbox_inches="tight", transparent=True)
+
     def make_initial_image(self):
         """make the graph show first 8 and path to next stronghold"""
-        for i in range(self.completed_count+1):
+        for i in range(self.completed_count):
             sh = self.strongholds[i]
-            self.graph_point(sh.get_coords(), sh.get_dot_colour())
             self.graph_line(sh.get_line_start(), sh.get_line_destination(), sh.get_line_colour())
+            self.graph_point(sh.get_coords(), sh.get_dot_colour(), sh.get_marker())
+
+        sh = self.strongholds[self.completed_count]
+        self.graph_line(sh.get_line_start(), sh.get_line_destination(), sh.get_line_colour())
+        self.graph_point(sh.get_coords(), "yellow", sh.get_marker())
+
+        self.save_graph() #comment out during testing
         
 
     def update_image(self):
         """graph line and point of next stronghold"""
+        last_sh = self.strongholds[self.completed_count-1]
+        sh = self.strongholds[self.completed_count]
+
+        self.graph_line(sh.get_line_start(), sh.get_line_destination(), sh.get_line_colour())
+
+        if self.completed_count == 128:
+            self.graph_point(sh.get_coords(), sh.get_dot_colour(), sh.get_marker()) #dont make the very last sh yellow, only purple
+        else:
+            sh = self.strongholds[self.completed_count]
+            self.graph_point(sh.get_coords(), "yellow", sh.get_marker()) 
+
+        last_sh = self.strongholds[self.completed_count-1] #make the last one normal colour, do this last so it goes over the line
+        self.graph_point(last_sh.get_coords(), last_sh.get_dot_colour(), last_sh.get_marker())
+
+        self.save_graph() #comment out during testing
+
+
+        """
         sh = self.strongholds[self.completed_count] #updates image after adding count
         self.graph_line(sh.get_line_start(), sh.get_line_destination(), sh.get_line_colour())
         self.graph_point(sh.get_coords(), sh.get_dot_colour())
+        """

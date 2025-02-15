@@ -58,8 +58,9 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
     best_path = (1 << 60, None)
     for strategy in STRATEGIES:
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        #search_parameters.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH #this makes it take forever
         search_parameters.first_solution_strategy = strategy
-        search_parameters.time_limit.seconds = 10
+        search_parameters.time_limit.seconds = 10 #set to 5 with metaheuristic thing
         solution = routing.SolveWithParameters(search_parameters)
 
         if not solution:
@@ -106,12 +107,8 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
             line_start = (0, 0)
         else:
             line_start = first8[i-1]
-        
-        if i==8:
-            marker = "*" #try to mark starting point with a star oh well it doesnt work anyway
-        else:
-            marker = "o"
-        
+        marker = "o"
+
         sh = first8[i] #just tuple coords
         strongholds.append(Stronghold(sh, get_stronghold_ring(sh), sh, line_start, marker)) #now contains stronghold objects of first 8
 
@@ -126,7 +123,7 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         ring = get_stronghold_ring(coords)
         dot_colour="purple" if is_last else "red" if is_reset else "green"
         line_colour="green"
-        marker = "*" if is_last else "o" #this just doesnt work
+        marker = "*" if is_last else "o"
         line_start = points[last_node]
         line_destination = coords
 
