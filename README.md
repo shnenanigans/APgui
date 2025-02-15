@@ -31,6 +31,8 @@ If you accidentally closed the program and need to use backups, press the 'use l
 
 Now, the program should show two windows. One with coords and one with the portals graph.
 
+Please note that the first angle (towards stronghold 9) will be not be correct. The program only knows where the stronghold is, so if you had a close blind it will be kind of close and if you had a very far blind, it won't be right at all.
+
 ![image](https://github.com/user-attachments/assets/c6d8984c-82fc-484e-be18-0ba4c4e67f0f)
 
 Do not activate the Portal Graph window and press Q, K, or L. It will either close the window or mess up the graph and I have no idea why or how to stop it.
@@ -51,7 +53,7 @@ Green = Do not set spawn at all
 
 **Extra Buttons**
 
-The 'Next SH Hotkey' button works as it sounds. It will allow you to hotkey instead of pressing 'next' on the gui. Just click it, enter a hotkey, and it should work. To remove a hotkey, set it to 'esc'. Also, it will not allow you to use q, k, or l as hotkeys because those close the portals graph (although only if you are tabbed into the graph, better safe than sorry ig). If you want arrow keys you can type page_up and page_down into the box. You can put official key names for any key I just don't know what they are except those ones.
+The 'Next SH Hotkey' button works as it sounds. It will allow you to hotkey instead of pressing 'next' on the gui. Just click it, enter a hotkey, and it should work. To remove a hotkey, set it to 'esc'. Also, it will not allow you to use q, k, or l as hotkeys because those close the portals graph (although only if you are tabbed into the graph, better safe than sorry ig). If you want arrow keys you can type "up" or "down" into the box. You can put official key names for any key I just don't know what they are except those ones.
 
 The 'Check ring' button works as it sounds. You can enter coords or f3c, like the first 8 strongholds.
 
