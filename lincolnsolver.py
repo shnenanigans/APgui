@@ -2,9 +2,9 @@ import numpy as np
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from strongholds import Stronghold #to make stronghold objects
-from utils import get_stronghold_ring
+from utils import get_stronghold_ring, get_mc_angle
 
-def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stronghold]:
+def make_stronghold_list(points: list[tuple], first8: list[tuple], spawn_coords: tuple) -> list[Stronghold]:
     """creates list of stronghold objects in the order that the player will go to them. points contains all stronghold location estimations and first8 contains the first 8 locations found by the player."""
     OR_SCALE_FACTOR = 10000
 
@@ -31,7 +31,7 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
     origin_reset_matrix = np.zeros((len(points), len(points)), bool)
     for i, (x1, y1) in enumerate(points):
         for j, (x2, y2) in enumerate(points[1:], start=1):
-            origin_distance = np.sqrt(x2**2 + y2**2)
+            origin_distance = np.sqrt((spawn_coords[0] - x2) ** 2 + (spawn_coords[1] - y2) ** 2)
             real_distance = np.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
             if get_stronghold_ring((x1, y1)) == 8: #never go back to spawn on 8th ring in case it is empty sector
                 distance_matrix[i][j] = real_distance
@@ -110,7 +110,7 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         marker = "o"
 
         sh = first8[i] #just tuple coords
-        strongholds.append(Stronghold(sh, get_stronghold_ring(sh), sh, line_start, marker)) #now contains stronghold objects of first 8
+        strongholds.append(Stronghold(sh, get_stronghold_ring(sh), sh, line_start, marker, angle=0)) #now contains stronghold objects of first 8
 
     for i, node in enumerate(route[1:-1], start=1):
         #each sh object should contain the the angle pointing to it from the last one, and the line going from the last one to the current one
@@ -128,7 +128,7 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
         line_destination = coords
 
         if is_reset:
-            line_start = (0, 0)
+            line_start = spawn_coords
             strongholds[-1].set_set_spawn(2)
             line_colour = "red"
 
@@ -145,7 +145,12 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple]) -> list[Stron
                     strongholds[-1].set_set_spawn(1)
                     set_spawn = 2
 
-        sh = Stronghold(coords, ring, line_destination, line_start, marker, line_colour, dot_colour, set_spawn)
+        if i == 1: #angle from 8th to 9th stronghold unknown because the program only knows where sh is not where your portal is, which could be over 2k away
+            angle = "unknown"
+        else:
+            angle = get_mc_angle(line_start, line_destination)
+
+        sh = Stronghold(coords, ring, line_destination, line_start, marker, angle, line_colour, dot_colour, set_spawn)
         strongholds.append(sh)
     
     return strongholds

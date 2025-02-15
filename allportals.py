@@ -13,12 +13,9 @@ from os import getcwd, listdir
 
 """
 todo
-VERIFY ANGLES BEFORE NEXT RELEASE
 fix backups not using most recent file
-add set origin in case nether roof portal is far from 0, 0
-next just gives an error at the end of the run
-add warning if next button is pressed too fast to have filled in a portal (Aware)
-make a repathfind button in case someone messes up (i really do not want to do this the thought of repathfinding makes me want to throw my monitor at the wall)
+add warning if next button is pressed too fast to have filled in a portal (impossible)
+make a repathfind button in case someone messes up (the thought of repathfinding makes me want to throw my monitor at the wall)
 add found/filled option on first 8 for coop mode
 
 to make exe:
@@ -36,6 +33,7 @@ class AllPortals:
         self.completed_count = 0
         self.first8 = []
         self.create_backups_file = True
+        self.spawn_coords = False #should contain overworld coords only
 
     def start(self):
         """actually start the window and program"""
@@ -52,7 +50,7 @@ class AllPortals:
         self.root.wm_attributes("-topmost", 0) #changes to 1 when the 'always on top' box is checked
         self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), exit(0)]) #for some reason the program doesnt stop when you close tkinter unless u have this thing (thanks desktopfolder)
         def on_closing(): #putting this in the lambda didnt work :(
-            if self.completed_count <=8:
+            if self.completed_count <=8 or not self.spawn_coords:
                 shs = self.first8
                 if len(shs)<=8:
                     with open("emergency backup for stupid idiots.txt", "w") as idiot:
@@ -95,7 +93,7 @@ class AllPortals:
         )  # very silly things happen if you press the next button twice...
 
         if self.create_backups_file:
-            backup_strongholds(self.first8)
+            backup_strongholds(self.first8, self.spawn_coords)
 
         def estimate_sh_locations(first8) -> None:
             """Predict location of all the other strongholds using the first 8, in overworld coords"""
@@ -120,7 +118,7 @@ class AllPortals:
 
         points = estimate_sh_locations(self.first8)
 
-        self.strongholds = make_stronghold_list(points, self.first8) #contains sh objects in order of completion
+        self.strongholds = make_stronghold_list(points, self.first8, self.spawn_coords) #contains sh objects in order of completion
         print(f"There are {len(self.strongholds)} strongholds")
         for sh in self.strongholds:
             ow_coords = sh.get_coords()
@@ -145,10 +143,11 @@ class AllPortals:
             sh.destroy()
         for entry in self.entries:
             entry.destroy()
-        self.lock_order_label.destroy()
+        self.spawn_coords_label.destroy()
         self.backups_button.destroy()
 
         self.checkring.destroy()
+        self.spawncoords.destroy()
         self.setup_next()
         self.next_button.destroy()
         self.display_next_sh()
@@ -157,7 +156,7 @@ class AllPortals:
     def lock_entry(self, ring: int, entry: object, button: object, next_button: object) -> None:
         """when user presses lock, check if coords are in correct ring and in the right format, add them to first strongholds array"""
         try:
-            sh = tuple(parse_input(entry.get()))
+            sh = parse_input(entry.get())
             if len(sh) != 2:
                 raise Exception
         except Exception as e:
@@ -187,7 +186,7 @@ class AllPortals:
         entry.config(state="disabled", cursor="heart") # <3
         button.config(state="disabled", cursor="heart")
 
-        if len(self.first8) == 8:
+        if len(self.first8) == 8 and self.spawn_coords: 
             next_button.config(state="normal") # allow user to press next
 
     def create_inital_widgets(self):
@@ -253,6 +252,14 @@ class AllPortals:
             activebackground=lightpeach,
         )
 
+        self.spawncoords = tk.Button(
+            self.root,
+            text="Spawn Coords",
+            command=self.give_spawn_coords,
+            bg=darkpeach,
+            activebackground=lightpeach
+        )
+
         self.locks = [
             tk.Button(
                 self.root,
@@ -271,31 +278,32 @@ class AllPortals:
             )
         [self.locks[i].grid(row=i, column=5) for i in range(0, 8)]
 
-        # label telling user to lock in order so that the image updates accurately
-        self.lock_order_label = tk.Label(
+        self.spawn_coords_label = tk.Label(
             self.root,
-            text="Please make sure you\nlock strongholds in the\norder you found them",
-            bg=peach,
+            text="None",
+            bg=peach
         )
-        self.lock_order_label.grid(row=3, column=6, rowspan=3)
+        self.spawn_coords_label.grid(row=6, column=6, rowspan=1)
 
         self.checkring.grid(row=7, column=6)
+        self.spawncoords.grid(row=5, column=6)
         self.next_button.grid(row=9, column=6)
 
     def use_backup(self):
+        """read backups file to create first8 list and spawn_coords"""
         path = (getcwd() + "\\backups")
         with open(path + "\\" + listdir(path)[0], "r") as f:
             lines = f.readlines()
-            coords=[]
+            self.first8=[]
             for sh in lines[:-1]:
-                coords.append(sh[:-1])
-            coords.append(lines[-1])
-        for coord in coords:
-            sh = tuple(parse_input(coord))
-            self.first8.append(sh)
-        print("showing first 8")
+                self.first8.append(parse_input(sh))
+            self.spawn_coords = parse_input(lines[-1])
+
+        print("first 8 strongholds:")
         for sh in self.first8:
             print(sh)
+        print(f"spawn coords:\n{get_nether_coords(self.spawn_coords)}")
+
         self.completed_count = 8
         self.create_backups_file = False
         self.check_next()
@@ -423,12 +431,12 @@ class AllPortals:
         nether_coords = get_nether_coords(coords)
         angle = sh.get_angle()
         print(
-            "Stronghold {0}:\n{1} at angle {2}".format(
+            "Stronghold {0}:\n{1} at angle: {2}".format(
                 self.completed_count+1, nether_coords, angle #display number for next sh, which has not been completed yet
             )
         )  # print in case user needs to see previous locations
         self.sh_label.config(
-            text="Stronghold {0}:\n{1} at angle {2}".format(
+            text="Stronghold {0}:\n{1} at angle: {2}".format(
                 self.completed_count+1, nether_coords, angle
             ),
             font=("Cambria", 14),
@@ -488,7 +496,7 @@ class AllPortals:
             "Type out the x and z overworld coordinates of the stronghold you want to check the ring of.",
         )
         try:
-            sh_coords = tuple(parse_input(new_coords))
+            sh_coords = parse_input(new_coords)
         except:
             tk.messagebox.showerror(
                 message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
@@ -512,14 +520,29 @@ class AllPortals:
             message=f"ring {get_stronghold_ring(sh_coords)}"
         )
         return
+    
+    def give_spawn_coords(self):
+        """give the program overworld spawn coordinates in order to have accurate angles and pathfinding"""
+        nether_spawn_coords = tk.simpledialog.askstring(
+            ":D",
+            "Type out the x and z NETHER coordinates of your roof portal at origin", #more accurate to give nether coords and calculate overworld coords
+        )
+        try:
+            nether_spawn_coords = parse_input(nether_spawn_coords)
+            self.spawn_coords = get_overworld_coords(nether_spawn_coords)
+            self.spawn_coords_label.config(text=f"{nether_spawn_coords}")
+        except:
+            tk.messagebox.showerror(
+                message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
+            )
+            return
+        
+        if len(self.first8) == 8 and self.spawn_coords: 
+            self.next_button.config(state="normal") # allow user to press next
+        
 
     def next_sh(self):
         """check if it's done and if not go next. update count, image, and display"""
-
-        if self.newnext_button.cget("state") == "disabled": # stops the hotkey from pressing next when button is disabled
-            return
-        
-        self.newnext_button.config(state="disabled") #make sure you cant press and hold next button or click before the image updates
 
         # very important
         if self.done:
@@ -535,6 +558,7 @@ class AllPortals:
                 # self.bt_frame.config(background="pink")
                 # self.bt_frame.lift()
                 # self.newnext_button.config(command=self.movebutton)
+                self.newnext_button.config(state="normal")
                 return #sadpag i am too lazy to make this thing work it is supposed to be like an aim trainer
 
         elif self.completed_count == len(self.strongholds)-1: # means the user is done filling portals
@@ -546,8 +570,6 @@ class AllPortals:
             self.add_count()
             self.update_image()
             self.display_next_sh()
-        
-        self.newnext_button.config(state="normal")
 
     def set_next_hotkey(self):
         """sets hotkey to go to the next stronghold when you press the set hotkey button, or esc to remove hotkey."""
@@ -576,6 +598,8 @@ class AllPortals:
     def on_press(self, key):
         """runs every time any key is pressed and checks if it's the next sh hotkey"""
         if get_key_string(key) == self.next_stronghold_hotkey:
+            if self.newnext_button.cget("state") == "disabled": #cant press next when next button disabled
+                return
             self.newnext_button.invoke()
             return
 

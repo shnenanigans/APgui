@@ -18,11 +18,14 @@ def get_distance(x1, x2):
 
 
 def get_nether_coords(coords: tuple) -> tuple:
-    """find nether coords from ow coords"""
+    """find nether coords from overworld coords"""
     return (round(coords[0] / 8), round(coords[1] / 8))
 
+def get_overworld_coords(coords: tuple) -> tuple:
+    """find overworld coords from nether coords"""
+    return (coords[0] * 8, coords[1] * 8)
 
-def backup_strongholds(first8):
+def backup_strongholds(first8, spawn_coords):
     """these will be in the backups folder in the directory, named with the date and time"""
     try:
         os.mkdir("backups")
@@ -38,12 +41,13 @@ def backup_strongholds(first8):
         lines = ""
         for sh in first8:
             lines += f"{sh[0]} {sh[1]}\n"
+        lines += f"{spawn_coords[0]} {spawn_coords[1]}"
         print("creating backups file")
         print(lines)
         backup.writelines(lines)
 
 
-def parse_input(input):
+def parse_input(input) -> tuple:
     """gets coordinates into a tuple when you give it f3c or manually typed coords, returns false if entered wrong"""
     try:
         integers = input.split()
