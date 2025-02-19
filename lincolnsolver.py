@@ -4,8 +4,8 @@ from ortools.constraint_solver import pywrapcp
 from strongholds import Stronghold #to make stronghold objects
 from utils import get_stronghold_ring, get_mc_angle
 
-def make_stronghold_list(points: list[tuple], first8: list[tuple], spawn_coords: tuple) -> list[Stronghold]:
-    """creates list of stronghold objects in the order that the player will go to them. points contains all stronghold location estimations and first8 contains the first 8 locations found by the player."""
+def make_stronghold_list(points: list[tuple], filled: list[tuple], spawn_coords: tuple) -> list[Stronghold]:
+    """creates list of stronghold objects in the order that the player will go to them. points contains all stronghold location estimations and filled contains the filled shs in the first 8"""
     OR_SCALE_FACTOR = 10000
 
     STRATEGIES = (
@@ -60,7 +60,7 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple], spawn_coords:
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         #search_parameters.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH #this makes it take forever
         search_parameters.first_solution_strategy = strategy
-        search_parameters.time_limit.seconds = 10 #set to 5 with metaheuristic thing
+        search_parameters.time_limit.seconds = 50 #set to 5 with metaheuristic thing
         solution = routing.SolveWithParameters(search_parameters)
 
         if not solution:
@@ -102,15 +102,15 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple], spawn_coords:
     print(route)
     strongholds = [] #will contain all strongholds including first 8 and empty sector there are 129 strongholds now ive decided
 
-    for i in range(len(first8)): #sh contains just tuple coords
+    for i in range(len(filled)): #sh contains just tuple coords
         if i==0:
             line_start = (0, 0)
         else:
-            line_start = first8[i-1]
+            line_start = filled[i-1]
         marker = "o"
 
-        sh = first8[i] #just tuple coords
-        strongholds.append(Stronghold(sh, get_stronghold_ring(sh), sh, line_start, marker, angle=0)) #now contains stronghold objects of first 8
+        sh = filled[i] #just tuple coords
+        strongholds.append(Stronghold(sh, get_stronghold_ring(sh), sh, line_start, marker, angle=0)) #now contains stronghold objects of filled shs
 
     for i, node in enumerate(route[1:-1], start=1):
         #each sh object should contain the the angle pointing to it from the last one, and the line going from the last one to the current one
@@ -146,7 +146,7 @@ def make_stronghold_list(points: list[tuple], first8: list[tuple], spawn_coords:
                     set_spawn = 2
 
         if i == 1: #angle from 8th to 9th stronghold unknown because the program only knows where sh is not where your portal is, which could be over 2k away
-            angle = "unknown"
+            angle = "N/A"
         else:
             angle = get_mc_angle(line_start, line_destination)
 

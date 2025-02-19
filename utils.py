@@ -25,7 +25,7 @@ def get_overworld_coords(coords: tuple) -> tuple:
     """find overworld coords from nether coords"""
     return (coords[0] * 8, coords[1] * 8)
 
-def backup_strongholds(first8, spawn_coords):
+def backup_strongholds(found, spawn_coords):
     """these will be in the backups folder in the directory, named with the date and time"""
     try:
         os.mkdir("backups")
@@ -39,7 +39,7 @@ def backup_strongholds(first8, spawn_coords):
     ) as backup:
         # overly silly regex to simplify the list for writing to the file
         lines = ""
-        for sh in first8:
+        for sh in found:
             lines += f"{sh[0]} {sh[1]}\n"
         lines += f"{spawn_coords[0]} {spawn_coords[1]}"
         print("creating backups file")
