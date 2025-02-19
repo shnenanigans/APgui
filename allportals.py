@@ -349,6 +349,7 @@ class AllPortals:
             self.filled=[]
             for sh in lines[:-1]:
                 self.filled.append(parse_input(sh))
+                self.found.append(parse_input(sh))
             self.spawn_coords = parse_input(lines[-1])
 
         print("first 8 strongholds:")
@@ -464,7 +465,7 @@ class AllPortals:
         
         #make sure user can't accidentally close the image window cause there's no way to get it back
         #pressing q will close the window though for some reason i give up trying to fix
-        def on_closing(): messagebox.showinfo("no", "You must close the main program to close this window.")
+        def on_closing(): tk.messagebox.showinfo("no", "You must close the main program to close this window.")
         image.protocol("WM_DELETE_WINDOW", on_closing)
 
         #using meaningful and descriptive variable names is a fundamental aspect of writing clean, maintainable, and understandable code. It's a practice that not only benefits you but also anyone who interacts with your code, now or in the future.
