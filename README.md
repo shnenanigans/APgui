@@ -45,17 +45,17 @@ The 'Find Portals' window is set up so that you can resize it to show only impor
 
 This will also hide the messages showing when to leave your spawn behind and when to not set spawn at all. The spawn instructions are also colour coded in case they are hidden in window resizing.
 
-Blue = set spawn normally at your blind portal like normal
+Blue: set spawn at blind portal and break it after filling end portal and respawning
 
-Purple = leave spawn at next blind (don't break bed after filling end portal)
+Purple: set spawn at blind portal and DO NOT break it after filling end portal and respawning
 
-Green = Do not set spawn at all
+Green: do not set spawn at blind portal
 
-If you have 'do not set spawn' without a 'leave spawn at next blind' before it, the program is taking you back to origin and you should have no spawn set anywhere.
+When green comes after blue, you will respawn at world spawn. When green comes after purple, you will respawn at your last blind portal.
 
-If you accidentally set your spawn when it takes you to origin, make a new bed to set spawn at and break it, then go through end portal.
+If you accidentally set your spawn when it takes you to origin, make a new bed to set spawn at and break it, then go through the end portal.
 
-If you accidentally set spawn when you were supposed to leave it at the last stronghold, just continue normally and keep in mind that your next angle will be incorrect.
+If you accidentally set spawn when you were supposed to leave it at the last stronghold, continue as if everything were blue and keep in mind that your next angle will be incorrect.
 
 **Extra Buttons**
 
