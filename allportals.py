@@ -15,10 +15,8 @@ from os import getcwd, listdir
 todo
 fix backups not using most recent file
 add warning if next button is pressed too fast to have filled in a portal (impossible)
-make a repathfind button in case someone messes up
+make a repathfind button in case someone messes up (the thought of repathfinding makes me want to throw my monitor at the wall)
 add found/filled option on first 8 for coop mode
-pace checker
-first move should never take you back to origin, even if last sh found was not in the 8th ring
 
 to make exe:
 pyinstaller --onefile --hiddenimport=ortools.constraint_solver.routing_parameters_pb2 main.py
@@ -33,8 +31,7 @@ class AllPortals:
         self.next_stronghold_hotkey = ""
         self.done = False #true if you are done filling portals
         self.completed_count = 0
-        self.found = []
-        self.filled = []
+        self.first8 = []
         self.create_backups_file = True
         self.spawn_coords = False #should contain overworld coords only
 
@@ -54,7 +51,7 @@ class AllPortals:
         self.root.protocol("WM_DELETE_WINDOW", lambda: [print('destroy me...'), exit(0)]) #for some reason the program doesnt stop when you close tkinter unless u have this thing (thanks desktopfolder)
         def on_closing(): #putting this in the lambda didnt work :(
             if self.completed_count <=8 or not self.spawn_coords:
-                shs = self.filled
+                shs = self.first8
                 if len(shs)<=8:
                     with open("emergency backup for stupid idiots.txt", "w") as idiot:
                         stupid = ""
@@ -89,22 +86,21 @@ class AllPortals:
                 facts_file.writelines(["(prime)\n"])
 
     def check_next(self):
-        """checks each sh location is found before changing window setup and predicts other sh locations"""
+        """checks each sh location is locked before changing window setup and predicts other sh locations"""
 
         self.next_button.config(
             state="disabled"
         )  # very silly things happen if you press the next button twice...
 
         if self.create_backups_file:
-            backup_strongholds(self.found, self.spawn_coords)
+            backup_strongholds(self.first8, self.spawn_coords)
 
-        #pretty sure this could be optimized by checking the ring each coord is in instead of looping through it a bunch idek how this works
-        def estimate_sh_locations(found, filled) -> None:
+        def estimate_sh_locations(first8) -> None:
             """Predict location of all the other strongholds using the first 8, in overworld coords"""
             points = []
-            points.append(self.filled[-1]) #points must contain starting point
+            points.append(first8[-1]) #points must contain starting point
             for ring, strongholds in enumerate(constants.strongholds_per_ring):
-                for sh in found:
+                for sh in first8:
                     if get_stronghold_ring(sh)-1 != ring:
                         continue
                     x, z = sh
@@ -116,15 +112,13 @@ class AllPortals:
                         estimate_z = magnitude * np.sin(angle)
 
                         points.append((round(estimate_x), round(estimate_z)))
-                    if sh not in filled:
-                        points.append(sh) #make sure "found" is also put in points since it hasnt been filled yet
 
                     break
             return points
 
-        points = estimate_sh_locations(self.found, self.filled)
+        points = estimate_sh_locations(self.first8)
 
-        self.strongholds = make_stronghold_list(points, self.filled, self.spawn_coords) #contains sh objects in order of completion
+        self.strongholds = make_stronghold_list(points, self.first8, self.spawn_coords) #contains sh objects in order of completion
         print(f"There are {len(self.strongholds)} strongholds")
         for sh in self.strongholds:
             ow_coords = sh.get_coords()
@@ -143,10 +137,8 @@ class AllPortals:
 
 
         # get rid of all widgets from the first-strongholds part
-        for filled_lock in self.filled_locks:
-            filled_lock.destroy()
-        for found_lock in self.found_locks:
-            found_lock.destroy()
+        for lock in self.locks:
+            lock.destroy()
         for sh in self.sh_labels:
             sh.destroy()
         for entry in self.entries:
@@ -161,9 +153,8 @@ class AllPortals:
         self.display_next_sh()
         self.make_initial_image()
 
-
-    def check_coords(self, ring: int, entry: object):
-        """return sh tuple if coords are entererd correctly and match the ring, False if not"""
+    def lock_entry(self, ring: int, entry: object, button: object, next_button: object) -> None:
+        """when user presses lock, check if coords are in correct ring and in the right format, add them to first strongholds array"""
         try:
             sh = parse_input(entry.get())
             if len(sh) != 2:
@@ -173,58 +164,36 @@ class AllPortals:
             tk.messagebox.showerror(
                 message="Something went wrong. Make sure you only input your x and z coordinate separated by a space, or copy paste the f3+c command"
             )
-            return False
+            return
 
         if get_stronghold_ring(sh) == 0:
             if not tk.messagebox.askyesno(
                 message="Are you sure this is in the right ring? This stronghold does not appear to be in any ring."
                 + "\nThis is possible to occur with biome snapping, but quite rare. If you are sure then click 'yes', otherwise hit 'no' and enter coords again"
             ):
-                return False
+                return
         elif ring != get_stronghold_ring(sh):
             if not tk.messagebox.askyesno(
                 message="Are you sure this is in the right ring? Looks like this is a stronghold in ring "
                 + str(get_stronghold_ring(sh))
                 + ".\nIf you are completely sure this is in the right ring and my program is stupid then click 'yes', otherwise hit 'no' and enter coords again"
             ):
-                return False
-        return sh
+                return
+            
+        self.first8.append(sh) #first8 contains only tuples of coords
+        self.add_count()
 
+        entry.config(state="disabled", cursor="heart") # <3
+        button.config(state="disabled", cursor="heart")
 
-    def found_entry(self, ring: int, entry: object, button: object, next_button: object) -> None:
-        """add to found array"""
-        sh = self.check_coords(ring, entry)
-        if sh:
-            if sh not in self.found: #dont duplicate
-                self.found.append(sh) #found contains only tuples of coords
-
-            entry.config(state="disabled", cursor="heart") # <3
-            button.config(state="disabled", cursor="heart")
-
-            if len(self.found) == 8 and self.spawn_coords:
-                next_button.config(state="normal") # allow user to press next
-
-    def filled_entry(self, ring: int, entry: object, button: object, next_button: object) -> None:
-        """add to filled array, found array, and sh count"""
-        
-        sh = self.check_coords(ring, entry)
-        if sh:
-            self.filled.append(sh) #filled contains only tuples of coords
-            if sh not in self.found:
-                self.found.append(sh) #all filled should be in found as well, with no duplicates
-            self.add_count()
-
-            entry.config(state="disabled", cursor="heart") # <3
-            button.config(state="disabled", cursor="heart")
-
-            if len(self.found) == 8 and self.spawn_coords: 
-                next_button.config(state="normal") # allow user to press next
+        if len(self.first8) == 8 and self.spawn_coords: 
+            next_button.config(state="normal") # allow user to press next
 
     def create_inital_widgets(self):
         """create the window for entering your first 8 sh locations"""
         # toggles window always on top or not
         self.toggle_frame = tk.Frame(self.root)
-        self.toggle_frame.grid(row=1, column=7)
+        self.toggle_frame.grid(row=1, column=6)
         always_on_top = tk.IntVar(self.root)
         self.topmost_toggle = tk.Checkbutton(
             self.toggle_frame,
@@ -246,7 +215,7 @@ class AllPortals:
             text="Use Last Backup",
             command=self.use_backup,
         )
-        self.backups_button.grid(row=2, column=7)
+        self.backups_button.grid(row=2, column=6)
 
         # labels for the entry boxes and locks to save each coord into a list of first strongholds
         self.sh_labels = [
@@ -291,69 +260,47 @@ class AllPortals:
             activebackground=lightpeach
         )
 
-        self.found_locks = [
+        self.locks = [
             tk.Button(
                 self.root,
-                text="found",
+                text="lock",
                 borderwidth=3,
                 bg=darkpeach,
                 activebackground=lightpeach,
             )
             for i in range(0, 8)
         ]
-
-        self.filled_locks = [
-            tk.Button(
-                self.root,
-                text="filled",
-                borderwidth=3,
-                bg=darkpeach,
-                activebackground=lightpeach,
-            )
-            for i in range(0, 8)
-        ]
-
         for i in range(0, 8):
-            self.found_locks[i].config(
-                command=lambda i=i: self.found_entry(
-                    i + 1, self.entries[i], self.found_locks[i], self.next_button
+            self.locks[i].config(
+                command=lambda i=i: self.lock_entry(
+                    i + 1, self.entries[i], self.locks[i], self.next_button
                 )
             )
-
-        for i in range(0, 8):
-            self.filled_locks[i].config(
-                command=lambda i=i: self.filled_entry(
-                    i + 1, self.entries[i], self.filled_locks[i], self.next_button
-                )
-            )
-
-        [self.found_locks[i].grid(row=i, column=5) for i in range(0, 8)]
-        [self.filled_locks[i].grid(row=i, column=6) for i in range(0, 8)]
+        [self.locks[i].grid(row=i, column=5) for i in range(0, 8)]
 
         self.spawn_coords_label = tk.Label(
             self.root,
             text="None",
             bg=peach
         )
-        self.spawn_coords_label.grid(row=6, column=7, rowspan=1)
+        self.spawn_coords_label.grid(row=6, column=6, rowspan=1)
 
-        self.checkring.grid(row=7, column=7)
-        self.spawncoords.grid(row=5, column=7)
-        self.next_button.grid(row=9, column=7)
+        self.checkring.grid(row=7, column=6)
+        self.spawncoords.grid(row=5, column=6)
+        self.next_button.grid(row=9, column=6)
 
     def use_backup(self):
-        """read backups file to create filled list and spawn_coords"""
+        """read backups file to create first8 list and spawn_coords"""
         path = (getcwd() + "\\backups")
         with open(path + "\\" + listdir(path)[0], "r") as f:
             lines = f.readlines()
-            self.filled=[]
+            self.first8=[]
             for sh in lines[:-1]:
-                self.filled.append(parse_input(sh))
-                self.found.append(parse_input(sh))
+                self.first8.append(parse_input(sh))
             self.spawn_coords = parse_input(lines[-1])
 
         print("first 8 strongholds:")
-        for sh in self.filled:
+        for sh in self.first8:
             print(sh)
         print(f"spawn coords:\n{get_nether_coords(self.spawn_coords)}")
 
@@ -458,14 +405,14 @@ class AllPortals:
 
         # make a new tkinter window for the graph, has to be toplevel not a whole new tkinter thingy cause it cant multithread or something
         #uncomment to test faster
-        #"""
+        """
         image=tk.Toplevel()
         image.title("Portals Graph")
         image.config(bg=lightblue)
         
         #make sure user can't accidentally close the image window cause there's no way to get it back
         #pressing q will close the window though for some reason i give up trying to fix
-        def on_closing(): tk.messagebox.showinfo("no", "You must close the main program to close this window.")
+        def on_closing(): messagebox.showinfo("no", "You must close the main program to close this window.")
         image.protocol("WM_DELETE_WINDOW", on_closing)
 
         #using meaningful and descriptive variable names is a fundamental aspect of writing clean, maintainable, and understandable code. It's a practice that not only benefits you but also anyone who interacts with your code, now or in the future.
@@ -474,7 +421,7 @@ class AllPortals:
         thang = FigureCanvasTkAgg(figure=aasdfae, master=image)
         thang.draw()
         thang.get_tk_widget().pack()
-        #"""
+        """
 
     def display_next_sh(self):
         """edit gui to show new coords and angle"""
@@ -590,7 +537,7 @@ class AllPortals:
             )
             return
         
-        if len(self.filled) == 8 and self.spawn_coords: 
+        if len(self.first8) == 8 and self.spawn_coords: 
             self.next_button.config(state="normal") # allow user to press next
         
 
@@ -689,7 +636,7 @@ class AllPortals:
         self.graph_line(sh.get_line_start(), sh.get_line_destination(), sh.get_line_colour())
         self.graph_point(sh.get_coords(), "yellow", sh.get_marker())
 
-        #self.save_graph() #comment out during testing
+        self.save_graph() #comment out during testing
         
 
     def update_image(self):
@@ -708,11 +655,4 @@ class AllPortals:
         last_sh = self.strongholds[self.completed_count-1] #make the last one normal colour, do this last so it goes over the line
         self.graph_point(last_sh.get_coords(), last_sh.get_dot_colour(), last_sh.get_marker())
 
-        #self.save_graph() #comment out during testing
-
-
-        """
-        sh = self.strongholds[self.completed_count] #updates image after adding count
-        self.graph_line(sh.get_line_start(), sh.get_line_destination(), sh.get_line_colour())
-        self.graph_point(sh.get_coords(), sh.get_dot_colour())
-        """
+        self.save_graph() #comment out during testing
